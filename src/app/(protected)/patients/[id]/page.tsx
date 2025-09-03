@@ -3,6 +3,10 @@ import { patients, visits, files } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+// export const revalidate = 0; // opcional
+
+
 export default async function PatientDetail(
     { params }: { params: Promise<{ id: string }> } // 👈 cambia acá
 ) {

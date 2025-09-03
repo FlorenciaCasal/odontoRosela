@@ -3,6 +3,10 @@ import { patients } from "@/lib/schema";
 import { desc } from "drizzle-orm";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+// export const revalidate = 0; // opcional
+
+
 export default async function PatientsPage() {
   const rows = await db.select().from(patients).orderBy(desc(patients.createdAt)).limit(50);
   return (
