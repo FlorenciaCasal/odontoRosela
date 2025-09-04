@@ -2,6 +2,7 @@ import { db } from "@/lib/drizzle";
 import { patients, visits, files } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
+import CopyLinkButton from "./CopyLinkButton";
 
 export const dynamic = "force-dynamic";
 // export const revalidate = 0; // opcional
@@ -19,13 +20,12 @@ export default async function PatientDetail(
     const f = await db.select().from(files).where(eq(files.patientId, p.id)).orderBy(desc(files.uploadedAt));
     const link = `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/patients/${p.id}`;
 
+
     return (
         <main className="p-6 space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-xl font-semibold">{p.fullName}</h1>
-                <button className="border px-3 py-1" onClick={() => navigator.clipboard.writeText(link)}>
-                    Copiar link para Calendar
-                </button>
+                <CopyLinkButton link={link} />
             </div>
 
             <section>
@@ -34,7 +34,8 @@ export default async function PatientDetail(
                 <ul className="mt-3 space-y-2">
                     {vs.map(v => (
                         <li key={v.id} className="border p-3 rounded">
-                            <div className="text-sm text-gray-600">{new Date(v.date!).toLocaleString()}</div>
+                            <div className="text-sm text-gray-600">{new Date(v.date ?? Date.now()).toLocaleString()}
+                            </div>
                             <p className="whitespace-pre-wrap">{v.notes}</p>
                         </li>
                     ))}
