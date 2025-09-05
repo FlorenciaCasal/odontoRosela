@@ -4,6 +4,8 @@ export const patients = pgTable("patients", {
   id: uuid("id").primaryKey().defaultRandom(),
   fullName: text("full_name").notNull(),
   docNumber: text("doc_number"),
+  insuranceName: text("insurance_name"),
+  insuranceNumber: text("insurance_number"),
   phone: text("phone"),
   email: text("email"),
   notes: text("notes"),

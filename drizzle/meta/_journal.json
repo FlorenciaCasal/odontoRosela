@@ -15,6 +15,13 @@
       "when": 1757100728516,
       "tag": "0001_loving_hellion",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757102631618,
+      "tag": "0002_cynical_trish_tilby",
+      "breakpoints": true
     }
   ]
 }
