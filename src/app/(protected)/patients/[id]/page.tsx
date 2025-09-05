@@ -5,27 +5,34 @@ import Link from "next/link";
 import CopyLinkButton from "./CopyLinkButton";
 
 export const dynamic = "force-dynamic";
-// export const revalidate = 0; // opcional
-
 
 export default async function PatientDetail(
-    { params }: { params: Promise<{ id: string }> } // 👈 cambia acá
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params; // 👈 y resolvelo acá
+    const { id } = await params;
 
     const [p] = await db.select().from(patients).where(eq(patients.id, id));
     if (!p) return <main className="p-6">No encontrado</main>;
 
     const vs = await db.select().from(visits).where(eq(visits.patientId, p.id)).orderBy(desc(visits.date));
     const f = await db.select().from(files).where(eq(files.patientId, p.id)).orderBy(desc(files.uploadedAt));
-    const link = `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/patients/${p.id}`;
 
+    // 👇 NUEVO: generamos ambos links
+    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+    const cleanLink = `${base}/patients/${p.id}`; // este va al evento de Calendar
+    const magicLink = `${base}/patients/${p.id}?k=${process.env.ACCESS_KEY}`; // usar SOLO para enrolar un dispositivo nuevo
 
     return (
         <main className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h1 className="text-xl font-semibold">{p.fullName}</h1>
-                <CopyLinkButton link={link} />
+
+                <div className="flex gap-2">
+                    {/* Botón para Calendar (sin k) */}
+                    <CopyLinkButton link={cleanLink} />
+                    {/* Botón para enrolar un dispositivo nuevo (con k) */}
+                    <CopyLinkButton link={magicLink} label="Magic link (enrolar)" />
+                </div>
             </div>
 
             <section>
@@ -34,8 +41,7 @@ export default async function PatientDetail(
                 <ul className="mt-3 space-y-2">
                     {vs.map(v => (
                         <li key={v.id} className="border p-3 rounded">
-                            <div className="text-sm text-gray-600">{new Date(v.date ?? Date.now()).toLocaleString()}
-                            </div>
+                            <div className="text-sm text-gray-600">{new Date(v.date ?? Date.now()).toLocaleString()}</div>
                             <p className="whitespace-pre-wrap">{v.notes}</p>
                         </li>
                     ))}
