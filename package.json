@@ -13,7 +13,7 @@
     "@vercel/blob": "latest",
     "@vercel/postgres": "latest",
     "drizzle-orm": "latest",
-    "googleapis": "latest",
+    "googleapis": "^159.0.0",
     "iron-session": "^8.0.4",
     "nanoid": "latest",
     "next": "15.5.2",
