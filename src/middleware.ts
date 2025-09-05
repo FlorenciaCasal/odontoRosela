@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const config = {
-  // protege TODO menos estáticos, el health y el OAuth de Google
-  matcher: ["/((?!_next|favicon.ico|api/health-db|api/google/oauth).*)"],
+  // Protege TODO menos estáticos y estos endpoints públicos
+  matcher: [
+    "/((?!_next|favicon.ico|api/health-db|api/google/oauth|api/patients/index).*)"
+  ],
 };
 
 const COOKIE_NAME = "odonto_auth";
 
-// rutas que queremos proteger (server y páginas)
+// Prefijos públicos (no requieren cookie)
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/api/google/oauth",
+  "/api/patients/index", // ⬅️ Apps Script necesita esto libre
+  "/api/health-db"
+];
+
+// Rutas protegidas (páginas y APIs internas)
 function isProtectedPath(pathname: string) {
   return (
     pathname.startsWith("/patients") ||
@@ -18,11 +28,15 @@ function isProtectedPath(pathname: string) {
 
 export default function middleware(req: NextRequest) {
   const url = req.nextUrl;
-  const res = NextResponse.next();
 
-  // 1) Si llega con ?k=ACCESS_KEY -> setear cookie y redirigir limpio
+  // Permitir públicos explícitos
+  if (PUBLIC_PREFIXES.some((p) => url.pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  // Magic link (?k=ACCESS_KEY) para enrolar dispositivo
   const k = url.searchParams.get("k");
-  if (k && k === process.env.ACCESS_KEY2) {
+  if (k && k === process.env.ACCESS_KEY2) { // ⬅️ usa ACCESS_KEY (no ACCESS_KEY2)
     const clean = new URL(req.url);
     clean.searchParams.delete("k");
 
@@ -39,16 +53,16 @@ export default function middleware(req: NextRequest) {
     return resp;
   }
 
-  // 2) Si la ruta es protegida y no hay cookie -> mandar al /login (por si acaso)
+  // En el resto, exigir cookie
   if (isProtectedPath(url.pathname)) {
     const hasCookie = req.cookies.get(COOKIE_NAME)?.value === "1";
     if (!hasCookie) {
       const to = url.clone();
       to.pathname = "/login";
-      to.search = ""; // limpio params
+      to.search = "";
       return NextResponse.redirect(to);
     }
   }
 
-  return res;
+  return NextResponse.next();
 }
