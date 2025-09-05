@@ -20,7 +20,7 @@ export default async function PatientDetail(
     // 👇 NUEVO: generamos ambos links
     const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
     const cleanLink = `${base}/patients/${p.id}`; // este va al evento de Calendar
-    const magicLink = `${base}/patients/${p.id}?k=${process.env.ACCESS_KEY}`; // usar SOLO para enrolar un dispositivo nuevo
+    const magicLink = `${base}/patients/${p.id}?k=${process.env.ACCESS_KEY2}`; // usar SOLO para enrolar un dispositivo nuevo
 
     return (
         <main className="p-6 space-y-8">

@@ -22,7 +22,7 @@ export default function middleware(req: NextRequest) {
 
   // 1) Si llega con ?k=ACCESS_KEY -> setear cookie y redirigir limpio
   const k = url.searchParams.get("k");
-  if (k && k === process.env.ACCESS_KEY) {
+  if (k && k === process.env.ACCESS_KEY2) {
     const clean = new URL(req.url);
     clean.searchParams.delete("k");
 
