@@ -8,6 +8,13 @@
       "when": 1756910081222,
       "tag": "0000_majestic_northstar",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1757100728516,
+      "tag": "0001_loving_hellion",
+      "breakpoints": true
     }
   ]
 }

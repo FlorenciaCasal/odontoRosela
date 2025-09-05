@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "google_tokens_email_unique" ON "google_tokens" USING btree ("email");

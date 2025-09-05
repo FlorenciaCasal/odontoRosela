@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { google } from "googleapis";
 import { db } from "@/lib/drizzle";
 import { googleTokens } from "@/lib/schema";
-import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
 

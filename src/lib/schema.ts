@@ -1,5 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, timestamp, uuid, integer, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const patients = pgTable("patients", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -29,11 +28,16 @@ export const files = pgTable("files", {
   uploadedAt: timestamp("uploaded_at", { withTimezone: true }).defaultNow()
 });
 
-export const googleTokens = pgTable("google_tokens", {
-  // solo si haces Fase 2 (OAuth)
-  id: uuid("id").primaryKey().defaultRandom(),
-  email: text("email").notNull(),
-  accessToken: text("access_token").notNull(),
-  refreshToken: text("refresh_token").notNull(),
-  expiryDateMs: text("expiry_date_ms").notNull()
-});
+export const googleTokens = pgTable(
+  "google_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token").notNull(),
+    expiryDateMs: text("expiry_date_ms").notNull(),
+  },
+  (t) => ({
+    emailUnique: uniqueIndex("google_tokens_email_unique").on(t.email),
+  })
+);
