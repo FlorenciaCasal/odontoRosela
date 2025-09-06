@@ -1,5 +1,8 @@
 "use client";
+import Image from "next/image";
 import { useState } from "react";
+
+type Tab = "datos" | "consultas" | "archivos";
 
 type Visit = { id: string; note?: string | null; notes?: string | null; date?: string | null };
 type FileRow = { id: string; url: string; filename: string; contentType?: string | null; uploadedAt?: string | null };
@@ -14,6 +17,13 @@ function fmt(d?: string | null) {
     catch { return d; }
 }
 
+// ✅ Lista de tabs tipada (sin any)
+const TABS = [
+    { key: "datos", label: "Datos" },
+    { key: "consultas", label: "Consultas" },
+    { key: "archivos", label: "Archivos" },
+] as const satisfies ReadonlyArray<{ key: Tab; label: string }>;
+
 export default function PatientTabs({
     patient, visits, files,
 }: { patient: PatientSafe; visits: Visit[]; files: FileRow[] }) {
@@ -22,15 +32,11 @@ export default function PatientTabs({
         <div className="space-y-4">
             {/* Tabs */}
             <div className="inline-flex rounded-2xl overflow-hidden border">
-                {[
-                    ["datos", "Datos"],
-                    ["consultas", "Consultas"],
-                    ["archivos", "Archivos"],
-                ].map(([k, label]) => (
+                {TABS.map(({ key, label }) => (
                     <button
-                        key={k}
-                        onClick={() => setTab(k as any)}
-                        className={`px-4 py-2 text-sm ${tab === k ? "bg-black text-white" : "bg-white hover:bg-gray-50"}`}
+                        key={key}
+                        onClick={() => setTab(key)}  // ← ya es Tab, no hace falta any
+                        className={`px-4 py-2 text-sm ${tab === key ? "bg-black text-white" : "bg-white hover:bg-gray-50"}`}
                     >
                         {label}
                     </button>
@@ -94,7 +100,7 @@ export default function PatientTabs({
                                     </a>
                                     {isImg && (
                                         <a href={f.url} target="_blank" rel="noreferrer">
-                                            <img src={f.url} alt={f.filename} className="mt-2 max-h-48 object-contain rounded-lg" />
+                                            <Image src={f.url} alt={f.filename} className="mt-2 max-h-48 object-contain rounded-lg" />
                                         </a>
                                     )}
                                     {f.uploadedAt && <div className="text-xs text-gray-500 mt-1">{fmt(f.uploadedAt)}</div>}
