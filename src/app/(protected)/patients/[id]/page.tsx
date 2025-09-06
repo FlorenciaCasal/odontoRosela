@@ -2,44 +2,83 @@ import { db } from "@/lib/drizzle";
 import { patients, visits, files } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
-import CopyLinkButton from "./CopyLinkButton";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-// Tipos inferidos desde Drizzle (solo los que sí usamos)
+type Patient = typeof patients.$inferSelect;
 type Visit = typeof visits.$inferSelect;
 type FileRow = typeof files.$inferSelect;
 
-function getErrorMessage(e: unknown) {
+function getErr(e: unknown) {
     if (e instanceof Error) return e.stack || e.message;
     if (typeof e === "string") return e;
     try { return JSON.stringify(e); } catch { return String(e); }
 }
 
+function isUuidLike(s: string) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+}
+
 export default async function PatientDetail(
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: { id: string } } // <- sin Promise aquí
 ) {
+    // 0) validar ID básico para evitar errores tontos
+    const id = params?.id;
+    if (!id || !isUuidLike(id)) {
+        return (
+            <main className="p-6">
+                <h1 className="text-xl font-semibold">ID inválido</h1>
+                <p className="mt-2 text-sm">El parámetro no parece un UUID.</p>
+            </main>
+        );
+    }
+
     try {
-        const { id } = await params;
+        // 1) paciente
+        let p: Patient | undefined;
+        try {
+            const [row] = await db.select().from(patients).where(eq(patients.id, id));
+            p = row;
+        } catch (e) {
+            return (
+                <main className="p-6">
+                    <h1 className="text-xl font-semibold">Error consultando paciente</h1>
+                    <pre className="mt-3 text-sm whitespace-pre-wrap">{getErr(e)}</pre>
+                </main>
+            );
+        }
 
-        // 1) Paciente
-        const [p] = await db.select().from(patients).where(eq(patients.id, id));
-        if (!p) return <main className="p-6">No encontrado</main>;
+        if (!p) {
+            return <main className="p-6">No encontrado</main>;
+        }
 
-        // 2) Consultas y archivos
-        const vs: Visit[] = await db
-            .select()
-            .from(visits)
-            .where(eq(visits.patientId, p.id))
-            .orderBy(desc(visits.date));
+        // 2) visitas
+        let vs: Visit[] = [];
+        try {
+            vs = await db
+                .select()
+                .from(visits)
+                .where(eq(visits.patientId, p.id))
+                .orderBy(desc(visits.date));
+        } catch (e) {
+            // seguimos mostrando la ficha, solo mostramos el error de visitas
+            vs = [];
+        }
 
-        const fs: FileRow[] = await db
-            .select()
-            .from(files)
-            .where(eq(files.patientId, p.id))
-            .orderBy(desc(files.uploadedAt));
+        // 3) archivos
+        let fs: FileRow[] = [];
+        try {
+            fs = await db
+                .select()
+                .from(files)
+                .where(eq(files.patientId, p.id))
+                .orderBy(desc(files.uploadedAt));
+        } catch (e) {
+            fs = [];
+        }
 
-        // 3) Links
+        // 4) links (sin componentes cliente para evitar sospechas)
         const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://odontologiapuelo.vercel.app";
         const cleanLink = `${base}/patients/${p.id}`;
         const magicLink = `${base}/patients/${p.id}?k=${encodeURIComponent(process.env.ACCESS_KEY2 ?? "")}`;
@@ -57,38 +96,27 @@ export default async function PatientDetail(
                             {p.phone ? <>Tel: {p.phone}<br /></> : null}
                             {p.email ? <>Email: {p.email}<br /></> : null}
                         </div>
-
                     </div>
 
-                    {/* Link para Calendar */}
+                    {/* Link para Calendar (solo inputs de solo lectura) */}
                     <div className="bg-gray-50 rounded-lg p-3">
                         <div className="text-sm font-medium mb-1">Enlace para pegar en Google Calendar</div>
-                        <div className="flex gap-2">
-                            <input
-                                className="border p-2 w-full rounded"
-                                value={cleanLink}
-                                readOnly
-                                onFocus={(e) => e.currentTarget.select()}
-                            />
-                            <CopyLinkButton link={cleanLink} label="Copiar" />
-                        </div>
-
-                        <details className="mt-2">
+                        <input
+                            className="border p-2 w-full rounded mb-2"
+                            value={cleanLink}
+                            readOnly
+                            onFocus={(e) => e.currentTarget.select()}
+                        />
+                        <details className="mt-1">
                             <summary className="text-sm text-gray-600 cursor-pointer">Opciones avanzadas</summary>
                             <div className="mt-2 text-sm">
                                 <p className="mb-2"><b>Magic link</b> (solo una vez por dispositivo):</p>
-                                <div className="flex gap-2">
-                                    <input
-                                        className="border p-2 w-full rounded"
-                                        value={magicLink}
-                                        readOnly
-                                        onFocus={(e) => e.currentTarget.select()}
-                                    />
-                                    <CopyLinkButton link={magicLink} label="Copiar" />
-                                </div>
-                                <p className="mt-2 text-gray-600">
-                                    Usalo al cambiar/restaurar celular o PC para “enrolar” el dispositivo.
-                                </p>
+                                <input
+                                    className="border p-2 w-full rounded"
+                                    value={magicLink}
+                                    readOnly
+                                    onFocus={(e) => e.currentTarget.select()}
+                                />
                             </div>
                         </details>
                     </div>
@@ -100,16 +128,13 @@ export default async function PatientDetail(
                         <h2 className="text-lg font-medium">Consultas</h2>
                         <Link className="border px-3 py-2 rounded" href={`/visits/new?patientId=${p.id}`}>Nueva consulta</Link>
                     </div>
-
                     {vs.length === 0 ? (
                         <div className="text-sm text-gray-600">Sin consultas registradas aún.</div>
                     ) : (
                         <ul className="space-y-2">
                             {vs.map(v => (
                                 <li key={v.id} className="border p-3 rounded">
-                                    <div className="text-xs text-gray-500">
-                                        {new Date(v.date ?? Date.now()).toLocaleString()}
-                                    </div>
+                                    <div className="text-xs text-gray-500">{(v.date ?? p.createdAt)?.toString()}</div>
                                     <p className="whitespace-pre-wrap mt-1">{v.notes}</p>
                                 </li>
                             ))}
@@ -132,12 +157,7 @@ export default async function PatientDetail(
                         <ul className="mt-3 grid gap-2 md:grid-cols-2">
                             {fs.map(file => (
                                 <li key={file.id} className="border p-3 rounded">
-                                    <a
-                                        className="text-blue-600 underline break-all"
-                                        href={file.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
+                                    <a className="text-blue-600 underline break-all" href={file.url} target="_blank" rel="noreferrer">
                                         {file.filename}
                                     </a>
                                 </li>
@@ -150,8 +170,8 @@ export default async function PatientDetail(
     } catch (e) {
         return (
             <main className="p-6">
-                <h1 className="text-xl font-semibold">Error en ficha</h1>
-                <pre className="mt-3 text-sm whitespace-pre-wrap">{getErrorMessage(e)}</pre>
+                <h1 className="text-xl font-semibold">Error en ficha (atrapado)</h1>
+                <pre className="mt-3 text-sm whitespace-pre-wrap">{getErr(e)}</pre>
             </main>
         );
     }
