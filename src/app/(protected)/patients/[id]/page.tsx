@@ -2,6 +2,7 @@ import { db } from "@/lib/drizzle";
 import { patients, visits, files } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
+import CalendarLinks from "@/app/components/CalendarLinks";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -88,38 +89,28 @@ export default async function PatientDetail(
       fs = [];
     }
 
-    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://odontologiapuelo.vercel.app";
-    const cleanLink = `${base}/patients/${p.id}`;
-    const magicLink = `${base}/patients/${p.id}?k=${encodeURIComponent(process.env.ACCESS_KEY2 ?? "")}`;
+    
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://odontologiapuelo.vercel.app";
+  const cleanLink = `${base}/patients/${p.id}`;
+  const magicLink = `${base}/patients/${p.id}?k=${encodeURIComponent(process.env.ACCESS_KEY2 ?? "")}`;
 
-    return (
-      <main className="p-6 space-y-8">
-        {/* Datos */}
-        <section className="border rounded-xl p-4 grid gap-3 md:grid-cols-2">
-          <div>
-            <h1 className="text-2xl font-semibold">{p.fullName}</h1>
-            <div className="mt-1 text-sm text-gray-600">
-              {p.docNumber ? <>DNI: {p.docNumber}<br /></> : null}
-              {p.insuranceName ? <>Obra social: {p.insuranceName}<br /></> : null}
-              {p.insuranceNumber ? <>N° credencial: {p.insuranceNumber}<br /></> : null}
-              {p.phone ? <>Tel: {p.phone}<br /></> : null}
-              {p.email ? <>Email: {p.email}<br /></> : null}
-            </div>
+  return (
+    <main className="p-6 space-y-8">
+      <section className="border rounded-xl p-4 grid gap-3 md:grid-cols-2">
+        <div>
+          <h1 className="text-2xl font-semibold">{p.fullName}</h1>
+          <div className="mt-1 text-sm text-gray-600">
+            {p.docNumber ? <>DNI: {p.docNumber}<br /></> : null}
+            {p.insuranceName ? <>Obra social: {p.insuranceName}<br /></> : null}
+            {p.insuranceNumber ? <>N° credencial: {p.insuranceNumber}<br /></> : null}
+            {p.phone ? <>Tel: {p.phone}<br /></> : null}
+            {p.email ? <>Email: {p.email}<br /></> : null}
           </div>
+        </div>
 
-          {/* Links para Calendar */}
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm font-medium mb-1">Enlace para pegar en Google Calendar</div>
-            <input className="border p-2 w-full rounded mb-2" value={cleanLink} readOnly onFocus={(e) => e.currentTarget.select()} />
-            <details className="mt-1">
-              <summary className="text-sm text-gray-600 cursor-pointer">Opciones avanzadas</summary>
-              <div className="mt-2 text-sm">
-                <p className="mb-2"><b>Magic link</b> (una vez por dispositivo):</p>
-                <input className="border p-2 w-full rounded" value={magicLink} readOnly onFocus={(e) => e.currentTarget.select()} />
-              </div>
-            </details>
-          </div>
-        </section>
+        {/* ⬇️ Reemplazo: el bloque con inputs ahora es un Client Component */}
+        <CalendarLinks cleanLink={cleanLink} magicLink={magicLink} />
+      </section>
 
         {/* Consultas */}
         <section>
