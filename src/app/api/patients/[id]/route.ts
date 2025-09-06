@@ -16,19 +16,19 @@ const PatientUpdate = z.object({
 
 export async function GET(
     _req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = params;
+    const { id } = await params;
     const [row] = await db.select().from(patients).where(eq(patients.id, id));
     return NextResponse.json(row ?? {}, { status: row ? 200 : 404 });
 }
 
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params;
+        const { id } = await params;
         const body = await req.json();
         const data = PatientUpdate.parse(body);
 
@@ -41,9 +41,9 @@ export async function PUT(
 
 export async function DELETE(
     _req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = params;
+    const { id } = await params;
     await db.delete(patients).where(eq(patients.id, id));
     return NextResponse.json({ ok: true });
 }

@@ -31,10 +31,12 @@ function fmtDate(d: Date | string | null | undefined) {
     }
 }
 
+type PageParams = Promise<{ id: string }>;
+
 export default async function PatientDetail(
-    { params }: { params: { id: string } }
+    { params }: { params: PageParams }   // ⬅️ tu convención (Promise)
 ) {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id || !isUuidLike(id)) {
         return (
