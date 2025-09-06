@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import EditPatientInline from "./EditPatientInline";
+import DeletePatientButton from "@/app/components/DeletePatientButton";
 
 type Tab = "datos" | "consultas" | "archivos";
 
@@ -55,7 +56,7 @@ export default function PatientTabs({
                             {patient.insuranceNumber && <div>N° credencial: {patient.insuranceNumber}</div>}
                             {patient.phone && <div>Tel: {patient.phone}</div>}
                             {patient.email && <div>Email: {patient.email}</div>}
-                             {patient.notes && <div>Notes: {patient.notes}</div>}
+                            {patient.notes && <div>Notes: {patient.notes}</div>}
                             {patient.createdAt && <div>Alta: {fmt(patient.createdAt)}</div>}
                         </div>
                     </div>
@@ -74,6 +75,7 @@ export default function PatientTabs({
                                     insuranceNumber: patient.insuranceNumber ?? null,
                                     notes: patient.notes ?? null
                                 }} />
+                            <DeletePatientButton id={patient.id} name={patient.fullName} />
                         </div>
                     </div>
                 </section>

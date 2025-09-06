@@ -3,7 +3,6 @@ import { patients, visits, files } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 import PatientTabs from "@/app/components/PatientTabs";
 import { notFound } from "next/navigation";
-import EditPatientInline from "@/app/components/EditPatientInline";
 
 
 export const runtime = "nodejs";
@@ -103,17 +102,6 @@ export default async function PatientDetail(
             <main className="p-6 space-y-8">
                 {/* encabezado con links a Calendar si querés mantenerlo */}
                 <PatientTabs patient={safe} visits={safeVisits} files={safeFiles} />
-                <div className="border rounded-xl p-4">
-                    <h3 className="font-medium mb-2">Acciones</h3>
-                    <div className="flex gap-2 items-center">
-                        <EditPatientInline p={{
-                            id: safe.id, fullName: safe.fullName,
-                            docNumber: safe.docNumber, phone: safe.phone, email: safe.email,
-                            insuranceName: safe.insuranceName, insuranceNumber: safe.insuranceNumber,
-                            notes: null, // si querés editar notas generales acá
-                        }} />
-                    </div>
-                </div>
             </main>
         );
     } catch (e) {
