@@ -1,99 +1,121 @@
 import { db } from "@/lib/drizzle";
 import { patients, visits, files } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
-// import Link from "next/link";
-import CopyLinkButton from "./CopyLinkButton";
+import Link from "next/link";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-// Tipo seguro que extiende lo que trae Drizzle con campos opcionales extra
-type PatientSelect = typeof patients.$inferSelect;
-type PatientWithExtras = PatientSelect & {
-  insuranceName?: string | null;
-  insuranceNumber?: string | null;
-};
+type Patient = typeof patients.$inferSelect;
+type Visit   = typeof visits.$inferSelect;
+type FileRow = typeof files.$inferSelect;
 
-function getErrorMessage(e: unknown): string {
+function getErr(e: unknown) {
   if (e instanceof Error) return e.stack || e.message;
   if (typeof e === "string") return e;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
+
+function isUuidLike(s: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+}
+
+function fmtDate(d: Date | string | null | undefined) {
   try {
-    return JSON.stringify(e);
+    if (!d) return "";
+    const date = d instanceof Date ? d : new Date(d);
+    return date.toLocaleString();
   } catch {
-    return String(e);
+    return String(d ?? "");
   }
 }
 
 export default async function PatientDetail(
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
+  if (!id || !isUuidLike(id)) {
+    return (
+      <main className="p-6">
+        <h1 className="text-xl font-semibold">ID inválido</h1>
+        <p className="mt-2 text-sm">El parámetro no parece un UUID: {id}</p>
+      </main>
+    );
+  }
+
   try {
-    const { id } = await params;
-
-    // p tiene el tipo básico de Drizzle; lo “ampliamos” a PatientWithExtras para usar opcionales
-    const [pRaw] = await db.select().from(patients).where(eq(patients.id, id));
-    const p = pRaw as PatientWithExtras | undefined;
-
+    // Paciente
+    let p: Patient | undefined;
+    try {
+      const [row] = await db.select().from(patients).where(eq(patients.id, id));
+      p = row;
+    } catch (e) {
+      console.error("DB error patients:", e);
+      return (
+        <main className="p-6">
+          <h1 className="text-xl font-semibold">Error consultando paciente</h1>
+          <pre className="mt-3 text-sm whitespace-pre-wrap">{getErr(e)}</pre>
+        </main>
+      );
+    }
     if (!p) return <main className="p-6">No encontrado</main>;
 
-    const vs = await db.select().from(visits)
-      .where(eq(visits.patientId, p.id))
-      .orderBy(desc(visits.date));
+    // Visitas (no romper si falla)
+    let vs: Visit[] = [];
+    try {
+      vs = await db
+        .select()
+        .from(visits)
+        .where(eq(visits.patientId, p.id))
+        .orderBy(desc(visits.date));
+    } catch (e) {
+      console.error("DB error visits:", e);
+      vs = [];
+    }
 
-    const f = await db.select().from(files)
-      .where(eq(files.patientId, p.id))
-      .orderBy(desc(files.uploadedAt));
+    // Archivos (no romper si falla)
+    let fs: FileRow[] = [];
+    try {
+      fs = await db
+        .select()
+        .from(files)
+        .where(eq(files.patientId, p.id))
+        .orderBy(desc(files.uploadedAt));
+    } catch (e) {
+      console.error("DB error files:", e);
+      fs = [];
+    }
 
-    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-    const cleanLink = `${base}/patients/${p.id}`; // para Calendar
-    const magicLink = `${base}/patients/${p.id}?k=${encodeURIComponent(process.env.ACCESS_KEY2 ?? "")}`; // para enrolar un dispositivo nuevo
+    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://odontologiapuelo.vercel.app";
+    const cleanLink = `${base}/patients/${p.id}`;
+    const magicLink = `${base}/patients/${p.id}?k=${encodeURIComponent(process.env.ACCESS_KEY2 ?? "")}`;
 
     return (
       <main className="p-6 space-y-8">
-        {/* Encabezado */}
+        {/* Datos */}
         <section className="border rounded-xl p-4 grid gap-3 md:grid-cols-2">
           <div>
             <h1 className="text-2xl font-semibold">{p.fullName}</h1>
             <div className="mt-1 text-sm text-gray-600">
               {p.docNumber ? <>DNI: {p.docNumber}<br /></> : null}
+              {p.insuranceName ? <>Obra social: {p.insuranceName}<br /></> : null}
+              {p.insuranceNumber ? <>N° credencial: {p.insuranceNumber}<br /></> : null}
               {p.phone ? <>Tel: {p.phone}<br /></> : null}
               {p.email ? <>Email: {p.email}<br /></> : null}
-              {p.insuranceName ? <>Obra social: {p.insuranceName}<br /></> : null}
-              {p.insuranceNumber ? <>N° credencial: {p.insuranceNumber}</> : null}
             </div>
           </div>
 
-          {/* Bloque de link para Calendar */}
+          {/* Links para Calendar */}
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="text-sm font-medium mb-1">Enlace para pegar en Google Calendar</div>
-            <div className="flex gap-2">
-              <input
-                className="border p-2 w-full rounded"
-                value={cleanLink}
-                readOnly
-                onFocus={(e) => e.currentTarget.select()}
-              />
-              <CopyLinkButton link={cleanLink} label="Copiar" />
-            </div>
-
-            {/* Opciones avanzadas (magic link) */}
-            <details className="mt-2">
+            <input className="border p-2 w-full rounded mb-2" value={cleanLink} readOnly onFocus={(e) => e.currentTarget.select()} />
+            <details className="mt-1">
               <summary className="text-sm text-gray-600 cursor-pointer">Opciones avanzadas</summary>
               <div className="mt-2 text-sm">
-                <p className="mb-2">
-                  <b>Magic link</b> (solo para enrolar un dispositivo nuevo, una vez):
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    className="border p-2 w-full rounded"
-                    value={magicLink}
-                    readOnly
-                    onFocus={(e) => e.currentTarget.select()}
-                  />
-                  <CopyLinkButton link={magicLink} label="Copiar" />
-                </div>
-                <p className="mt-2 text-gray-600">
-                  Usalo solo cuando cambies de celular/PC o restaures el dispositivo.
-                </p>
+                <p className="mb-2"><b>Magic link</b> (una vez por dispositivo):</p>
+                <input className="border p-2 w-full rounded" value={magicLink} readOnly onFocus={(e) => e.currentTarget.select()} />
               </div>
             </details>
           </div>
@@ -103,21 +125,20 @@ export default async function PatientDetail(
         <section>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-medium">Consultas</h2>
-            {/* <Link className="border px-3 py-2 rounded" href={`/visits/new?patientId=${p.id}`}> */}
-              Nueva consulta
-            {/* </Link> */}
+            <Link className="border px-3 py-2 rounded" href={`/visits/new?patientId=${p.id}`}>Nueva consulta</Link>
           </div>
-          <ul className="space-y-2">
-            {vs.map(v => (
-              <li key={v.id} className="border p-3 rounded">
-                <div className="text-xs text-gray-500">
-                  {new Date(v.date ?? Date.now()).toLocaleString()}
-                </div>
-                <p className="whitespace-pre-wrap mt-1">{v.notes}</p>
-              </li>
-            ))}
-          </ul>
-          {vs.length === 0 && <div className="text-sm text-gray-600">Sin consultas registradas aún.</div>}
+          {vs.length === 0 ? (
+            <div className="text-sm text-gray-600">Sin consultas registradas aún.</div>
+          ) : (
+            <ul className="space-y-2">
+              {vs.map(v => (
+                <li key={v.id} className="border p-3 rounded">
+                  <div className="text-xs text-gray-500">{fmtDate(v.date ?? p.createdAt)}</div>
+                  <p className="whitespace-pre-wrap mt-1">{v.notes}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {/* Archivos */}
@@ -128,30 +149,33 @@ export default async function PatientDetail(
             <input type="file" name="file" required />
             <button className="border px-3 py-2 rounded">Subir</button>
           </form>
-          <ul className="mt-3 grid gap-2 md:grid-cols-2">
-            {f.map(file => (
-              <li key={file.id} className="border p-3 rounded">
-                <a className="text-blue-600 underline break-all" href={file.url} target="_blank" rel="noreferrer">
-                  {file.filename}
-                </a>
-              </li>
-            ))}
-          </ul>
-          {f.length === 0 && <div className="text-sm text-gray-600">Sin archivos subidos.</div>}
+
+          {fs.length === 0 ? (
+            <div className="text-sm text-gray-600 mt-3">Sin archivos subidos.</div>
+          ) : (
+            <ul className="mt-3 grid gap-2 md:grid-cols-2">
+              {fs.map(file => (
+                <li key={file.id} className="border p-3 rounded">
+                  <a className="text-blue-600 underline break-all" href={file.url} target="_blank" rel="noreferrer">
+                    {file.filename}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </main>
     );
-  } catch (e: unknown) {
-    const msg = getErrorMessage(e);
-    console.error("PatientDetail error:", msg);
+  } catch (e) {
     return (
       <main className="p-6">
-        <h1 className="text-xl font-semibold">Error en ficha</h1>
-        <pre className="mt-3 text-sm whitespace-pre-wrap">{msg}</pre>
+        <h1 className="text-xl font-semibold">Error en ficha (atrapado)</h1>
+        <pre className="mt-3 text-sm whitespace-pre-wrap">{getErr(e)}</pre>
       </main>
     );
   }
 }
+
 
 
 // import { db } from "@/lib/drizzle";
