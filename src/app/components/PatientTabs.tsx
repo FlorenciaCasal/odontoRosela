@@ -75,7 +75,7 @@ export default function PatientTabs({
                                     insuranceNumber: patient.insuranceNumber ?? null,
                                     notes: patient.notes ?? null
                                 }} />
-                            <DeletePatientButton id={patient.id} name={patient.fullName} />
+                            <DeletePatientButton id={patient.id} name={patient.fullName} redirectTo="/patients" />
                         </div>
                     </div>
                 </section>
