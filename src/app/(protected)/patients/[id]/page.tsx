@@ -1,202 +1,158 @@
-// import { db } from "@/lib/drizzle";
-// import { patients, visits, files } from "@/lib/schema";
-// import { eq, desc } from "drizzle-orm";
-// import Link from "next/link";
-// import CopyLinkButton from "./CopyLinkButton";
-
-// export const dynamic = "force-dynamic";
-
-// // Tipo seguro que extiende lo que trae Drizzle con campos opcionales extra
-// type PatientSelect = typeof patients.$inferSelect;
-// type PatientWithExtras = PatientSelect & {
-//   insuranceName?: string | null;
-//   insuranceNumber?: string | null;
-// };
-
-// function getErrorMessage(e: unknown): string {
-//   if (e instanceof Error) return e.stack || e.message;
-//   if (typeof e === "string") return e;
-//   try {
-//     return JSON.stringify(e);
-//   } catch {
-//     return String(e);
-//   }
-// }
-
-// export default async function PatientDetail(
-//   { params }: { params: Promise<{ id: string }> }
-// ) {
-//   try {
-//     const { id } = await params;
-
-//     // p tiene el tipo básico de Drizzle; lo “ampliamos” a PatientWithExtras para usar opcionales
-//     const [pRaw] = await db.select().from(patients).where(eq(patients.id, id));
-//     const p = pRaw as PatientWithExtras | undefined;
-
-//     if (!p) return <main className="p-6">No encontrado</main>;
-
-//     const vs = await db.select().from(visits)
-//       .where(eq(visits.patientId, p.id))
-//       .orderBy(desc(visits.date));
-
-//     const f = await db.select().from(files)
-//       .where(eq(files.patientId, p.id))
-//       .orderBy(desc(files.uploadedAt));
-
-//     const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-//     const cleanLink = `${base}/patients/${p.id}`; // para Calendar
-//     const magicLink = `${base}/patients/${p.id}?k=${encodeURIComponent(process.env.ACCESS_KEY2 ?? "")}`; // para enrolar un dispositivo nuevo
-
-//     return (
-//       <main className="p-6 space-y-8">
-//         {/* Encabezado */}
-//         <section className="border rounded-xl p-4 grid gap-3 md:grid-cols-2">
-//           <div>
-//             <h1 className="text-2xl font-semibold">{p.fullName}</h1>
-//             <div className="mt-1 text-sm text-gray-600">
-//               {p.docNumber ? <>DNI: {p.docNumber}<br /></> : null}
-//               {p.phone ? <>Tel: {p.phone}<br /></> : null}
-//               {p.email ? <>Email: {p.email}<br /></> : null}
-//               {p.insuranceName ? <>Obra social: {p.insuranceName}<br /></> : null}
-//               {p.insuranceNumber ? <>N° credencial: {p.insuranceNumber}</> : null}
-//             </div>
-//           </div>
-
-//           {/* Bloque de link para Calendar */}
-//           <div className="bg-gray-50 rounded-lg p-3">
-//             <div className="text-sm font-medium mb-1">Enlace para pegar en Google Calendar</div>
-//             <div className="flex gap-2">
-//               <input
-//                 className="border p-2 w-full rounded"
-//                 value={cleanLink}
-//                 readOnly
-//                 onFocus={(e) => e.currentTarget.select()}
-//               />
-//               <CopyLinkButton link={cleanLink} label="Copiar" />
-//             </div>
-
-//             {/* Opciones avanzadas (magic link) */}
-//             <details className="mt-2">
-//               <summary className="text-sm text-gray-600 cursor-pointer">Opciones avanzadas</summary>
-//               <div className="mt-2 text-sm">
-//                 <p className="mb-2">
-//                   <b>Magic link</b> (solo para enrolar un dispositivo nuevo, una vez):
-//                 </p>
-//                 <div className="flex gap-2">
-//                   <input
-//                     className="border p-2 w-full rounded"
-//                     value={magicLink}
-//                     readOnly
-//                     onFocus={(e) => e.currentTarget.select()}
-//                   />
-//                   <CopyLinkButton link={magicLink} label="Copiar" />
-//                 </div>
-//                 <p className="mt-2 text-gray-600">
-//                   Usalo solo cuando cambies de celular/PC o restaures el dispositivo.
-//                 </p>
-//               </div>
-//             </details>
-//           </div>
-//         </section>
-
-//         {/* Consultas */}
-//         <section>
-//           <div className="flex items-center justify-between mb-2">
-//             <h2 className="text-lg font-medium">Consultas</h2>
-//             <Link className="border px-3 py-2 rounded" href={`/visits/new?patientId=${p.id}`}>
-//               Nueva consulta
-//             </Link>
-//           </div>
-//           <ul className="space-y-2">
-//             {vs.map(v => (
-//               <li key={v.id} className="border p-3 rounded">
-//                 <div className="text-xs text-gray-500">
-//                   {new Date(v.date ?? Date.now()).toLocaleString()}
-//                 </div>
-//                 <p className="whitespace-pre-wrap mt-1">{v.notes}</p>
-//               </li>
-//             ))}
-//           </ul>
-//           {vs.length === 0 && <div className="text-sm text-gray-600">Sin consultas registradas aún.</div>}
-//         </section>
-
-//         {/* Archivos */}
-//         <section>
-//           <h2 className="text-lg font-medium mb-2">Archivos</h2>
-//           <form action="/api/uploads" method="post" encType="multipart/form-data" className="flex gap-2 items-center">
-//             <input type="hidden" name="patientId" value={p.id} />
-//             <input type="file" name="file" required />
-//             <button className="border px-3 py-2 rounded">Subir</button>
-//           </form>
-//           <ul className="mt-3 grid gap-2 md:grid-cols-2">
-//             {f.map(file => (
-//               <li key={file.id} className="border p-3 rounded">
-//                 <a className="text-blue-600 underline break-all" href={file.url} target="_blank" rel="noreferrer">
-//                   {file.filename}
-//                 </a>
-//               </li>
-//             ))}
-//           </ul>
-//           {f.length === 0 && <div className="text-sm text-gray-600">Sin archivos subidos.</div>}
-//         </section>
-//       </main>
-//     );
-//   } catch (e: unknown) {
-//     const msg = getErrorMessage(e);
-//     console.error("PatientDetail error:", msg);
-//     return (
-//       <main className="p-6">
-//         <h1 className="text-xl font-semibold">Error en ficha</h1>
-//         <pre className="mt-3 text-sm whitespace-pre-wrap">{msg}</pre>
-//       </main>
-//     );
-//   }
-// }
-
-
 import { db } from "@/lib/drizzle";
-import { patients } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { patients, visits, files } from "@/lib/schema";
+import { eq, desc } from "drizzle-orm";
+import Link from "next/link";
+import CopyLinkButton from "./CopyLinkButton";
 
 export const dynamic = "force-dynamic";
 
+// Tipos inferidos desde Drizzle
 type Patient = typeof patients.$inferSelect;
+type Visit = typeof visits.$inferSelect;
+type FileRow = typeof files.$inferSelect;
 
 function getErrorMessage(e: unknown) {
-  if (e instanceof Error) return e.stack || e.message;
-  if (typeof e === "string") return e;
-  try { return JSON.stringify(e); } catch { return String(e); }
+    if (e instanceof Error) return e.stack || e.message;
+    if (typeof e === "string") return e;
+    try { return JSON.stringify(e); } catch { return String(e); }
 }
 
 export default async function PatientDetail(
-  { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params; // en Next 15 esto funciona (await de objeto va directo)
-    const [p] = await db.select().from(patients).where(eq(patients.id, id));
+    try {
+        const { id } = await params;
 
-    if (!p) return <main className="p-6">No encontrado</main>;
+        // 1) Paciente
+        const [p] = await db.select().from(patients).where(eq(patients.id, id));
+        if (!p) return <main className="p-6">No encontrado</main>;
 
-    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://odontologiapuelo.vercel.app";
-    const cleanLink = `${base}/patients/${p.id}`;
-    const magicLink = `${base}/patients/${p.id}?k=${encodeURIComponent(process.env.ACCESS_KEY2 ?? "")}`;
+        // 2) Consultas y archivos
+        const vs: Visit[] = await db
+            .select()
+            .from(visits)
+            .where(eq(visits.patientId, p.id))
+            .orderBy(desc(visits.date));
 
-    return (
-      <main className="p-6 space-y-4">
-        <h1 className="text-2xl font-semibold">Paciente</h1>
-        <pre className="p-3 bg-gray-50 rounded border text-sm">{JSON.stringify(p as Patient, null, 2)}</pre>
-        <div className="space-y-2">
-          <div><b>Link limpio</b> (para Calendar): <a className="text-blue-600 underline" href={cleanLink}>{cleanLink}</a></div>
-          <div><b>Magic link</b> (enrolar dispositivo): <a className="text-blue-600 underline" href={magicLink}>{magicLink}</a></div>
-        </div>
-      </main>
-    );
-  } catch (e) {
-    return (
-      <main className="p-6">
-        <h1 className="text-xl font-semibold">Error en ficha (vista mínima)</h1>
-        <pre className="mt-3 text-sm whitespace-pre-wrap">{getErrorMessage(e)}</pre>
-      </main>
-    );
-  }
+        const fs: FileRow[] = await db
+            .select()
+            .from(files)
+            .where(eq(files.patientId, p.id))
+            .orderBy(desc(files.uploadedAt));
+
+        // 3) Links
+        const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://odontologiapuelo.vercel.app";
+        const cleanLink = `${base}/patients/${p.id}`;
+        const magicLink = `${base}/patients/${p.id}?k=${encodeURIComponent(process.env.ACCESS_KEY2 ?? "")}`;
+
+        return (
+            <main className="p-6 space-y-8">
+                {/* Encabezado y datos */}
+                <section className="border rounded-xl p-4 grid gap-3 md:grid-cols-2">
+                    <div>
+                        <h1 className="text-2xl font-semibold">{p.fullName}</h1>
+                        <div className="mt-1 text-sm text-gray-600">
+                            {p.docNumber ? <>DNI: {p.docNumber}<br /></> : null}
+                            {p.phone ? <>Tel: {p.phone}<br /></> : null}
+                            {p.email ? <>Email: {p.email}<br /></> : null}
+                            {("insuranceName" in p && (p as any).insuranceName) ? <>Obra social: {(p as any).insuranceName}<br /></> : null}
+                            {("insuranceNumber" in p && (p as any).insuranceNumber) ? <>N° credencial: {(p as any).insuranceNumber}</> : null}
+                        </div>
+                    </div>
+
+                    {/* Link para Calendar */}
+                    <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-sm font-medium mb-1">Enlace para pegar en Google Calendar</div>
+                        <div className="flex gap-2">
+                            <input
+                                className="border p-2 w-full rounded"
+                                value={cleanLink}
+                                readOnly
+                                onFocus={(e) => e.currentTarget.select()}
+                            />
+                            <CopyLinkButton link={cleanLink} label="Copiar" />
+                        </div>
+
+                        <details className="mt-2">
+                            <summary className="text-sm text-gray-600 cursor-pointer">Opciones avanzadas</summary>
+                            <div className="mt-2 text-sm">
+                                <p className="mb-2"><b>Magic link</b> (solo una vez por dispositivo):</p>
+                                <div className="flex gap-2">
+                                    <input
+                                        className="border p-2 w-full rounded"
+                                        value={magicLink}
+                                        readOnly
+                                        onFocus={(e) => e.currentTarget.select()}
+                                    />
+                                    <CopyLinkButton link={magicLink} label="Copiar" />
+                                </div>
+                                <p className="mt-2 text-gray-600">
+                                    Usalo al cambiar/restaurar celular o PC para “enrolar” el dispositivo.
+                                </p>
+                            </div>
+                        </details>
+                    </div>
+                </section>
+
+                {/* Consultas */}
+                <section>
+                    <div className="flex items-center justify-between mb-2">
+                        <h2 className="text-lg font-medium">Consultas</h2>
+                        <Link className="border px-3 py-2 rounded" href={`/visits/new?patientId=${p.id}`}>Nueva consulta</Link>
+                    </div>
+
+                    {vs.length === 0 ? (
+                        <div className="text-sm text-gray-600">Sin consultas registradas aún.</div>
+                    ) : (
+                        <ul className="space-y-2">
+                            {vs.map(v => (
+                                <li key={v.id} className="border p-3 rounded">
+                                    <div className="text-xs text-gray-500">
+                                        {new Date(v.date ?? Date.now()).toLocaleString()}
+                                    </div>
+                                    <p className="whitespace-pre-wrap mt-1">{v.notes}</p>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+
+                {/* Archivos */}
+                <section>
+                    <h2 className="text-lg font-medium mb-2">Archivos</h2>
+                    <form action="/api/uploads" method="post" encType="multipart/form-data" className="flex gap-2 items-center">
+                        <input type="hidden" name="patientId" value={p.id} />
+                        <input type="file" name="file" required />
+                        <button className="border px-3 py-2 rounded">Subir</button>
+                    </form>
+
+                    {fs.length === 0 ? (
+                        <div className="text-sm text-gray-600 mt-3">Sin archivos subidos.</div>
+                    ) : (
+                        <ul className="mt-3 grid gap-2 md:grid-cols-2">
+                            {fs.map(file => (
+                                <li key={file.id} className="border p-3 rounded">
+                                    <a
+                                        className="text-blue-600 underline break-all"
+                                        href={file.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        {file.filename}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+            </main>
+        );
+    } catch (e) {
+        return (
+            <main className="p-6">
+                <h1 className="text-xl font-semibold">Error en ficha</h1>
+                <pre className="mt-3 text-sm whitespace-pre-wrap">{getErrorMessage(e)}</pre>
+            </main>
+        );
+    }
 }
