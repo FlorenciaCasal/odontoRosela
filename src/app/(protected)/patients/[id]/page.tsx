@@ -26,7 +26,7 @@ function fmtDate(d: Date | string | null | undefined) {
   try {
     if (!d) return "";
     const date = d instanceof Date ? d : new Date(d);
-    return date.toLocaleString();
+    return date.toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
   } catch {
     return String(d ?? "");
   }

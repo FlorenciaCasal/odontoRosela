@@ -9,8 +9,9 @@ export default async function NewVisit({
   if (!patientId) {
     return <main className="p-6">Falta el parámetro <code>patientId</code></main>;
   }
-  return <NewVisitForm patientId={patientId!} />;
+  return <NewVisitForm patientId={patientId} />;
 }
+
 
 
 
