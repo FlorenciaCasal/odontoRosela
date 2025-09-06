@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
+import EditPatientInline from "./EditPatientInline";
 
 type Tab = "datos" | "consultas" | "archivos";
 
@@ -8,7 +9,7 @@ type Visit = { id: string; note?: string | null; notes?: string | null; date?: s
 type FileRow = { id: string; url: string; filename: string; contentType?: string | null; uploadedAt?: string | null };
 type PatientSafe = {
     id: string; fullName: string; docNumber?: string | null; insuranceName?: string | null;
-    insuranceNumber?: string | null; phone?: string | null; email?: string | null; createdAt?: string | null;
+    insuranceNumber?: string | null; phone?: string | null; email?: string | null; notes?: string | null; createdAt?: string | null;
 };
 
 function fmt(d?: string | null) {
@@ -54,15 +55,25 @@ export default function PatientTabs({
                             {patient.insuranceNumber && <div>N° credencial: {patient.insuranceNumber}</div>}
                             {patient.phone && <div>Tel: {patient.phone}</div>}
                             {patient.email && <div>Email: {patient.email}</div>}
+                             {patient.notes && <div>Notes: {patient.notes}</div>}
                             {patient.createdAt && <div>Alta: {fmt(patient.createdAt)}</div>}
                         </div>
                     </div>
                     {/* acá podés meter acciones rápidas, ej. botón imprimir */}
                     <div className="border rounded-xl p-4">
                         <h3 className="font-medium mb-2">Acciones</h3>
-                        <div className="flex gap-2">
-                            <a className="border px-3 py-2 rounded" href={`/visits/new?patientId=${patient.id}`}>Nueva consulta</a>
-                            <button className="border px-3 py-2 rounded" onClick={() => window.print()}>Imprimir</button>
+                        <div className="flex gap-2 items-center">
+                            <EditPatientInline
+                                p={{
+                                    id: patient.id,
+                                    fullName: patient.fullName,
+                                    docNumber: patient.docNumber ?? null,
+                                    phone: patient.phone ?? null,
+                                    email: patient.email ?? null,
+                                    insuranceName: patient.insuranceName ?? null,
+                                    insuranceNumber: patient.insuranceNumber ?? null,
+                                    notes: patient.notes ?? null
+                                }} />
                         </div>
                     </div>
                 </section>
@@ -84,7 +95,7 @@ export default function PatientTabs({
                 <section className="space-y-3">
                     <form action="/api/uploads" method="post" encType="multipart/form-data" className="flex gap-2 items-center">
                         <input type="hidden" name="patientId" value={patient.id} />
-                        <input type="file" name="file" required />
+                        <input type="file" name="files" multiple />
                         <button className="border px-3 py-2 rounded">Subir</button>
                     </form>
 
@@ -93,6 +104,8 @@ export default function PatientTabs({
                     <ul className="grid gap-2 md:grid-cols-2">
                         {files.map(f => {
                             const isImg = (f.contentType || "").startsWith("image/");
+                            const isPdf = (f.contentType === "application/pdf") || f.filename?.toLowerCase().endsWith(".pdf");
+                            const isVideo = (f.contentType || "").startsWith("video/");
                             return (
                                 <li key={f.id} className="border rounded-xl p-3">
                                     <a href={f.url} target="_blank" rel="noreferrer" className="underline break-all">
@@ -102,6 +115,14 @@ export default function PatientTabs({
                                         <a href={f.url} target="_blank" rel="noreferrer">
                                             <Image src={f.url} alt={f.filename} className="mt-2 max-h-48 object-contain rounded-lg" />
                                         </a>
+                                    )}
+                                    {isPdf && (
+                                        <iframe src={f.url} className="mt-2 w-full h-64 rounded-lg" />
+                                    )}
+                                    {isVideo && (
+                                        <video controls className="mt-2 max-h-64 rounded-lg">
+                                            <source src={f.url} type={f.contentType || "video/mp4"} />
+                                        </video>
                                     )}
                                     {f.uploadedAt && <div className="text-xs text-gray-500 mt-1">{fmt(f.uploadedAt)}</div>}
                                 </li>

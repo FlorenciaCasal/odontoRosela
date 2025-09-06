@@ -1,29 +1,42 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { db } from "@/lib/drizzle";
-import { files } from "@/lib/schema";
+import { files as filesTable } from "@/lib/schema";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const form = await req.formData();
-  const file = form.get("file") as File;
-  const patientId = form.get("patientId") as string;
+  const patientId = form.get("patientId") as string | null;
+  const fileList = form.getAll("files").filter(f => f instanceof File) as File[];
 
-  if (!file || !patientId) return NextResponse.json({ ok: false }, { status: 400 });
+  if (!patientId || fileList.length === 0) {
+    return NextResponse.json({ ok: false, error: "Faltan parámetros" }, { status: 400 });
+  }
 
-  const blob = await put(`patients/${patientId}/${file.name}`, file, {
-    access: "public",
-    token: process.env.BLOB_READ_WRITE_TOKEN
-  });
+  // validación opcional
+  const MAX_SIZE = 50 * 1024 * 1024; // 50MB por archivo (ajustá a gusto)
+  for (const f of fileList) {
+    if (f.size > MAX_SIZE) {
+      return NextResponse.json({ ok: false, error: `Archivo demasiado grande: ${f.name}` }, { status: 400 });
+    }
+  }
 
-  await db.insert(files).values({
-    patientId,
-    url: blob.url,
-    filename: file.name,
-    contentType: file.type,
-    size: file.size
-  });
+  for (const file of fileList) {
+    const key = `patients/${patientId}/${Date.now()}-${file.name}`;
+    const blob = await put(key, file, {
+      access: "public",
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
+
+    await db.insert(filesTable).values({
+      patientId,
+      url: blob.url,
+      filename: file.name,
+      contentType: file.type || null,
+      size: file.size || 0,
+    });
+  }
 
   return NextResponse.redirect(new URL(`/patients/${patientId}`, req.url));
 }
