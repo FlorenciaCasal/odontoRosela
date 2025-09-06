@@ -1,37 +1,35 @@
 import { db } from "@/lib/drizzle";
 import { patients } from "@/lib/schema";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-export const runtime = "nodejs"; // asegura Node (útil si usás crypto y pool)
+const PatientCreate = z.object({
+  fullName: z.string().min(1),
+  docNumber: z.string().trim().optional().nullable(),
+  insuranceName: z.string().trim().optional().nullable(),
+  insuranceNumber: z.string().trim().optional().nullable(),
+  phone: z.string().trim().optional().nullable(),
+  email: z.string().trim().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
 
 export async function POST(req: Request) {
   try {
-    // 1) Parseo robusto
     const body = await req.json();
-    if (!body?.fullName || typeof body.fullName !== "string") {
-      return NextResponse.json({ ok: false, error: "fullName requerido" }, { status: 400 });
-    }
+    const data = PatientCreate.parse(body);
 
-    // 2) Genero el ID acá (evito depender de gen_random_uuid() en la DB)
-    const id = crypto.randomUUID();
+    const [row] = await db.insert(patients).values({
+      fullName: data.fullName,
+      docNumber: data.docNumber ?? null,
+      insuranceName: data.insuranceName ?? null,
+      insuranceNumber: data.insuranceNumber ?? null,
+      phone: data.phone ?? null,
+      email: data.email ?? null,
+      notes: data.notes ?? null,
+    }).returning({ id: patients.id });
 
-    // 3) Inserto (normalizo nulls)
-    const [row] = await db
-      .insert(patients)
-      .values({
-        id,
-        fullName: body.fullName,
-        phone: body.phone ?? null,
-        email: body.email ?? null,
-        notes: body.notes ?? null,
-      })
-      .returning({ id: patients.id });
-
-    return NextResponse.json({ ok: true, id: row.id }, { status: 201 });
+    return NextResponse.json({ id: row.id });
   } catch (e) {
-    const err = e as Error;
-    console.error("API /patients POST ERROR:", err.message);
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: String(e) }, { status: 400 });
   }
 }
-
