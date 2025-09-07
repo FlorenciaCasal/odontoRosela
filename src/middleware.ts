@@ -10,7 +10,21 @@ const COOKIE_NAME = "odonto_auth";
 export default function middleware(req: NextRequest) {
   const url = req.nextUrl;
 
-  // 1) Magic link: enrola el dispositivo 1 vez (?k=ACCESS_KEY2)
+  // --- 1) API: NO tocar k acá ---
+  if (url.pathname.startsWith("/api")) {
+    // GET/HEAD/OPTIONS públicos
+    if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+      return NextResponse.next();
+    }
+    // Escrituras requieren cookie (enrolamiento previo)
+    const hasCookie = req.cookies.get(COOKIE_NAME)?.value === "1";
+    if (!hasCookie) {
+      return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
+  // --- 2) Páginas (no /api): aplicar magic link ?k=ACCESS_KEY2 ---
   const k = url.searchParams.get("k");
   if (k && k === process.env.ACCESS_KEY2) {
     const clean = new URL(req.url);
@@ -28,22 +42,6 @@ export default function middleware(req: NextRequest) {
     return res;
   }
 
-  // 2) Páginas (no /api): SIEMPRE públicas
-  if (!url.pathname.startsWith("/api")) {
-    return NextResponse.next();
-  }
-
-  // 3) API: métodos de lectura SIEMPRE públicos
-  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
-    return NextResponse.next();
-  }
-
-  // 4) API: escrituras requieren cookie del magic link
-  const hasCookie = req.cookies.get(COOKIE_NAME)?.value === "1";
-  if (!hasCookie) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-  }
-
+  // 3) Páginas siempre públicas
   return NextResponse.next();
 }
-
