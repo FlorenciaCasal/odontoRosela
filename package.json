@@ -15,6 +15,7 @@
     "drizzle-orm": "latest",
     "googleapis": "^159.0.0",
     "iron-session": "^8.0.4",
+    "jose": "^6.1.0",
     "lucide-react": "^0.542.0",
     "nanoid": "latest",
     "next": "15.5.2",
