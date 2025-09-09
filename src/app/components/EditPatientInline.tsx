@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import IconButton from "@/app/components/ui/IconButton";
 import { Pencil, Save, X } from "lucide-react";
 
 type PatientEditable = {
@@ -49,19 +48,6 @@ export default function EditPatientInline({ p, onEditingChange }: {
         location.reload(); // simple
     }
 
-    // if (!editing) {
-    //     return (
-    //         <IconButton
-    //             variant="subtle"
-    //             size="md"
-    //             aria-label="Editar paciente"
-    //             title="Editar paciente"
-    //             onClick={startEdit}
-    //         >
-    //             <Pencil className="h-4 w-4" />
-    //         </IconButton>
-    //     );
-    // }
     if (!editing) {
         return (
             <button
@@ -78,28 +64,28 @@ export default function EditPatientInline({ p, onEditingChange }: {
     }
 
     return (
-        <form onSubmit={save} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <form onSubmit={save} className="card space-y-3 p-4">
             <input
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+                className="input"
                 value={form.fullName}
                 onChange={e => setForm({ ...form, fullName: e.target.value })}
                 required
             />
             <div className="grid gap-2 md:grid-cols-2">
-                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="DNI" value={form.docNumber ?? ""} onChange={e => setForm({ ...form, docNumber: e.target.value || null })} />
-                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Teléfono" value={form.phone ?? ""} onChange={e => setForm({ ...form, phone: e.target.value || null })} />
-                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Email" value={form.email ?? ""} onChange={e => setForm({ ...form, email: e.target.value || null })} />
-                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Obra social" value={form.insuranceName ?? ""} onChange={e => setForm({ ...form, insuranceName: e.target.value || null })} />
-                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="N° credencial" value={form.insuranceNumber ?? ""} onChange={e => setForm({ ...form, insuranceNumber: e.target.value || null })} />
+                <input className="input" placeholder="DNI" value={form.docNumber ?? ""} onChange={e => setForm({ ...form, docNumber: e.target.value || null })} />
+                <input className="input" placeholder="Teléfono" value={form.phone ?? ""} onChange={e => setForm({ ...form, phone: e.target.value || null })} />
+                <input className="input" placeholder="Email" value={form.email ?? ""} onChange={e => setForm({ ...form, email: e.target.value || null })} />
+                <input className="input" placeholder="Obra social" value={form.insuranceName ?? ""} onChange={e => setForm({ ...form, insuranceName: e.target.value || null })} />
+                <input className="input" placeholder="N° credencial" value={form.insuranceNumber ?? ""} onChange={e => setForm({ ...form, insuranceNumber: e.target.value || null })} />
             </div>
-            <textarea className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Notas" value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value || null })} />
+            <textarea className="textarea" placeholder="Notas" value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value || null })} />
             {err && <p className="text-sm text-red-600">{err}</p>}
             <div className="flex gap-2">
-                <button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800">
+                <button type="submit" className="btn btn-primary">
                     <Save className="h-4 w-4" />
                     Guardar
                 </button>
-                <button type="button" onClick={cancelEdit} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <button type="button" onClick={cancelEdit} className="btn btn-ghost">
                     <X className="h-4 w-4" />
                     Cancelar
                 </button>

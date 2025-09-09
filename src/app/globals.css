@@ -1,3 +1,4 @@
+/* === LO TUYO (igualito) ================================================ */
 @import "tailwindcss";
 
 :root {
@@ -20,31 +21,147 @@
 }
 
 @media print {
-
   header,
   nav,
   form,
-  button {
-    display: none !important;
-  }
-
-  main {
-    padding: 0 !important;
-  }
-
-  .border {
-    border: 1px solid #000 !important;
-  }
-
-  a::after {
-    content: "";
-  }
-
-  /* no mostrar URLs crudas */
+  button { display: none !important; }
+  main { padding: 0 !important; }
+  .border { border: 1px solid #000 !important; }
+  a::after { content: ""; }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* === NUEVO: tokens adicionales en RGB (no pisan tus vars) ============== */
+:root{
+  /* superficies */
+  --bg-app:        248 250 252;   /* slate-50 */
+  --bg-surface:    255 255 255;   /* blanco */
+  --border-subtle: 226 232 240;   /* slate-200 */
+
+  /* texto */
+  --text-strong:   15 23 42;      /* slate-900 */
+  --text-muted:    100 116 139;   /* slate-500 */
+
+  /* acciones/estados */
+  --brand:         29 78 216;     /* azul */
+  --brand-700:     30 64 175;
+  --accent:        16 185 129;    /* verde */
+  --accent-700:    5 150 105;
+  --danger:        220 38 38;     /* rojo */
+  --danger-700:    185 28 28;
+
+  /* focus */
+  --ring:          59 130 246;
+
+  /* radios */
+  --radius-card:   1rem;   /* ~ rounded-2xl */
+  --radius-pill:   .75rem; /* ~ rounded-xl  */
+}
+
+/* tema oscuro: solo ajusto superficies/bordes; respeta tu --background/--foreground */
+@media (prefers-color-scheme: dark) {
+  :root{
+    --bg-app:       2 6 23;    /* slate-950 */
+    --bg-surface:   15 23 42;  /* slate-900 */
+    --border-subtle:51 65 85;  /* slate-700 */
+    --text-strong:  241 245 249;
+    --text-muted:   148 163 184;
+  }
+}
+
+/* === NUEVO: pequeñas bases (no tocan body que ya tienes) =============== */
+@layer base{
+  html{ color-scheme: light dark; }
+}
+
+/* === NUEVO: componentes reutilizables ================================== */
+@layer components{
+  .card{
+    @apply shadow-sm;
+    border-radius: var(--radius-card);
+    border: 1px solid rgb(var(--border-subtle));
+    background: rgb(var(--bg-surface));
+  }
+
+  .btn{
+    @apply inline-flex items-center gap-2 text-sm font-medium transition;
+    @apply focus:outline-none;
+    border-radius: var(--radius-pill);
+    padding: 0.625rem 1rem; /* py-2.5 px-4 */
+  }
+  .btn:focus-visible{
+    box-shadow: 0 0 0 2px rgb(var(--ring) / .9);
+  }
+
+  .btn-primary{
+    @apply text-white;
+    background: rgb(var(--brand));
+  }
+  .btn-primary:hover{ background: rgb(var(--brand-700)); }
+
+  .btn-danger{
+    @apply text-white;
+    background: rgb(var(--danger));
+  }
+  .btn-danger:hover{ background: rgb(var(--danger-700)); }
+
+  .btn-ghost{
+    @apply text-slate-700;
+    background: white;
+    border: 1px solid rgb(var(--border-subtle));
+  }
+  .btn-ghost:hover{ @apply bg-slate-50; }
+
+  .tabbar{
+    @apply inline-flex overflow-hidden shadow-sm;
+    border: 1px solid rgb(var(--border-subtle));
+    border-radius: var(--radius-card);
+    background: white;
+  }
+  .tab{
+    @apply px-4 py-2 text-sm text-slate-700 hover:bg-slate-50;
+  }
+  .tab--active{
+    @apply bg-slate-900 text-white;
+  }
+
+  .badge{
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply ring-1 ring-inset;
+    color: rgb(var(--accent-700));
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0); /* para Safari */
+    border-color: rgb(209 250 229); /* emerald-100 */
+  }
+
+  .input{
+    @apply w-full text-sm;
+    border-radius: 0.5rem; /* rounded-lg */
+    border: 1px solid rgb(203 213 225); /* slate-300 */
+    padding: 0.5rem 0.75rem; /* py-2 px-3 */
+  }
+  .input:focus{
+    outline: none;
+    border-color: rgb(148 163 184); /* slate-400 */
+  }
+  .textarea{ @apply input min-h-[120px]; }
+
+  .dropzone{
+    @apply p-4;
+    border: 2px dashed rgb(203 213 225); /* slate-300 */
+    border-radius: var(--radius-card);
+    background: color-mix(in oklab, white 60%, transparent);
+  }
+}
+
+/* === NUEVO: utilidades mínimas ========================================= */
+@layer utilities{
+  .shadow-soft{ box-shadow: 0 2px 8px rgba(16,24,40,.08); }
+  .text-strong{ color: rgb(var(--text-strong)); }
+  .text-muted{ color: rgb(var(--text-muted)); }
+  .bg-app{ background: rgb(var(--bg-app)); }
 }
