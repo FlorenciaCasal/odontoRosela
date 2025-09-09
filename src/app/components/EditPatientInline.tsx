@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import IconButton from "@/app/components/ui/IconButton";
 import { Pencil, Save, X } from "lucide-react";
 
 type PatientEditable = {
@@ -53,7 +54,7 @@ export default function EditPatientInline({ p, onEditingChange }: {
             <button
                 type="button"
                 onClick={startEdit}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50 w-full sm:w-auto min-w-44 cursor-pointer"
                 aria-label="Editar paciente"
                 title="Editar paciente"
             >
@@ -64,31 +65,29 @@ export default function EditPatientInline({ p, onEditingChange }: {
     }
 
     return (
-        <form onSubmit={save} className="card space-y-3 p-4">
+        <form onSubmit={save} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <input
-                className="input"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
                 value={form.fullName}
                 onChange={e => setForm({ ...form, fullName: e.target.value })}
                 required
             />
             <div className="grid gap-2 md:grid-cols-2">
-                <input className="input" placeholder="DNI" value={form.docNumber ?? ""} onChange={e => setForm({ ...form, docNumber: e.target.value || null })} />
-                <input className="input" placeholder="Teléfono" value={form.phone ?? ""} onChange={e => setForm({ ...form, phone: e.target.value || null })} />
-                <input className="input" placeholder="Email" value={form.email ?? ""} onChange={e => setForm({ ...form, email: e.target.value || null })} />
-                <input className="input" placeholder="Obra social" value={form.insuranceName ?? ""} onChange={e => setForm({ ...form, insuranceName: e.target.value || null })} />
-                <input className="input" placeholder="N° credencial" value={form.insuranceNumber ?? ""} onChange={e => setForm({ ...form, insuranceNumber: e.target.value || null })} />
+                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="DNI" value={form.docNumber ?? ""} onChange={e => setForm({ ...form, docNumber: e.target.value || null })} />
+                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Teléfono" value={form.phone ?? ""} onChange={e => setForm({ ...form, phone: e.target.value || null })} />
+                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Email" value={form.email ?? ""} onChange={e => setForm({ ...form, email: e.target.value || null })} />
+                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Obra social" value={form.insuranceName ?? ""} onChange={e => setForm({ ...form, insuranceName: e.target.value || null })} />
+                <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="N° credencial" value={form.insuranceNumber ?? ""} onChange={e => setForm({ ...form, insuranceNumber: e.target.value || null })} />
             </div>
-            <textarea className="textarea" placeholder="Notas" value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value || null })} />
-            {err && <p className="text-sm text-red-600">{err}</p>}
+            <textarea className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Notas" value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value || null })} />
+            {err && <p className="text-red-600 text-sm">{err}</p>}
             <div className="flex gap-2">
-                <button type="submit" className="btn btn-primary">
+                <IconButton type="submit" variant="primary" aria-label="Guardar" title="Guardar" className="w-full sm:w-auto min-w-44">
                     <Save className="h-4 w-4" />
-                    Guardar
-                </button>
-                <button type="button" onClick={cancelEdit} className="btn btn-ghost">
-                    <X className="h-4 w-4" />
-                    Cancelar
-                </button>
+                </IconButton>
+                <IconButton type="button" variant="ghost" aria-label="Cancelar" title="Cancelar" onClick={cancelEdit} className="w-full sm:w-auto min-w-44">
+                    +   <X className="h-4 w-4" />
+                </IconButton>
             </div>
         </form>
     );

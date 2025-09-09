@@ -24,7 +24,7 @@ export default function LoginPage() {
         <input className="border p-2 w-full" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
         <input className="border p-2 w-full" placeholder="Contraseña" type="password" value={pass} onChange={e=>setPass(e.target.value)} />
         {err && <p className="text-red-600">{err}</p>}
-        <button className="border px-4 py-2">Entrar</button>
+        <button className="border px-4 py-2 cursor-pointer">Entrar</button>
       </form>
     </main>
   );

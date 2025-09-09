@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 export default function NewPatient() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [docNumber, setDocNumber] = useState("");
   const [insuranceName, setInsuranceName] = useState("");
@@ -9,6 +11,11 @@ export default function NewPatient() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+
+  const isDirty = useMemo(
+    () => !!(fullName || docNumber || insuranceName || insuranceNumber || phone || email || notes),
+    [fullName, docNumber, insuranceName, insuranceNumber, phone, email, notes]
+  );
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -34,6 +41,13 @@ export default function NewPatient() {
     location.href = `/patients/${id}`;
   }
 
+  function cancel() {
+    if (!isDirty || confirm("Descartar los cambios?")) {
+      // volvemos a la lista de pacientes si existe, si no, atrás
+      try { router.push("/patients"); } catch { history.back(); }
+    }
+  }
+
   return (
     <main className="p-6 max-w-xl mx-auto space-y-3">
       <h1 className="text-xl font-semibold">Nuevo paciente</h1>
@@ -45,7 +59,13 @@ export default function NewPatient() {
         <input className="border p-2 w-full" placeholder="Teléfono" value={phone} onChange={e => setPhone(e.target.value)} />
         <input className="border p-2 w-full" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
         <textarea className="border p-2 w-full" placeholder="Notas" value={notes} onChange={e => setNotes(e.target.value)} />
-        <button className="border px-4 py-2 rounded">Guardar</button>
+        <div className="flex gap-2 flex-col sm:flex-row">
+          <button className="border px-4 py-2 rounded w-full sm:w-auto min-w-44 cursor-pointer">Guardar</button>
+          <button
+            type="button"
+            onClick={cancel}
+            className="border px-4 py-2 rounded w-full sm:w-auto min-w-44 cursor-pointer">Cancelar</button>
+        </div>
       </form>
     </main>
   );

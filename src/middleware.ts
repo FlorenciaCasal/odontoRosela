@@ -10,7 +10,7 @@ const COOKIE_NAME = "odonto_auth";
 const ACCESS_KEY = process.env.ACCESS_KEY2!;
 const SESSION_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
 
-const PUBLIC_PREFIXES = ["/login", "/api/google/oauth", "/api/patients/index", "/api/health-db"];
+const PUBLIC_PREFIXES = ["/", "/login", "/api/google/oauth", "/api/patients/index", "/api/health-db"];
 
 function isProtectedPath(pathname: string) {
   return pathname.startsWith("/patients") || pathname.startsWith("/visits") || pathname.startsWith("/api");
@@ -61,7 +61,7 @@ export default async function middleware(req: NextRequest) {
     const token = req.cookies.get(COOKIE_NAME)?.value;
     if (!(await isValidSession(token))) {
       const to = url.clone();
-      to.pathname = "/login"; // si ya no usás /login, podés redirigir a "/"
+      to.pathname = "/"; // si ya no usás /login, podés redirigir a "/"
       to.search = "";
       return NextResponse.redirect(to);
     }

@@ -30,7 +30,7 @@ export default function CalendarLinks({
           readOnly
           onFocus={selectAll}
         />
-        <button type="button" className="border px-2 py-2 rounded" onClick={() => copy(cleanLink)}>
+        <button type="button" className="border px-2 py-2 rounded cursor-pointer" onClick={() => copy(cleanLink)}>
           Copiar
         </button>
       </div>
@@ -46,7 +46,7 @@ export default function CalendarLinks({
               readOnly
               onFocus={selectAll}
             />
-            <button type="button" className="border px-2 py-2 rounded" onClick={() => copy(magicLink)}>
+            <button type="button" className="border px-2 py-2 rounded cursor-pointer" onClick={() => copy(magicLink)}>
               Copiar
             </button>
           </div>
