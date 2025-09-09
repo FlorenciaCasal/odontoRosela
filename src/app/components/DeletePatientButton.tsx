@@ -1,5 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
+import IconButton from "@/app/components/ui/IconButton";
+import { Trash2 } from "lucide-react";
 
 export default function DeletePatientButton({ id, name, redirectTo,
 }: { id: string; name: string; redirectTo?: string }) {
@@ -18,8 +20,13 @@ export default function DeletePatientButton({ id, name, redirectTo,
     }
 
     return (
-        <button onClick={del} className="border px-3 py-2 rounded text-red-700">
-            Eliminar paciente
-        </button>
+        <IconButton
+            variant="danger"
+            aria-label="Eliminar paciente"
+            title="Eliminar paciente"
+            onClick={del}
+        >
+            <Trash2 className="h-4 w-4" />
+        </IconButton>
     );
 }

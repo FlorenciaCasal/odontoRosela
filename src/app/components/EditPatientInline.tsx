@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import IconButton from "@/app/components/ui/IconButton";
+import { Pencil, Save, X } from "lucide-react";
 
 type PatientEditable = {
     id: string; fullName: string;
@@ -11,10 +13,24 @@ type PatientEditable = {
     notes?: string | null;
 };
 
-export default function EditPatientInline({ p }: { p: PatientEditable }) {
+export default function EditPatientInline({ p, onEditingChange }: {
+    p: PatientEditable;
+    onEditingChange?: (editing: boolean) => void;
+}) {
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState<PatientEditable>(p);
     const [err, setErr] = useState("");
+
+    function startEdit() {
+        setEditing(true);
+        onEditingChange?.(true);    // avisar al padre
+    }
+
+    function cancelEdit() {
+        setEditing(false);
+        onEditingChange?.(false);   // avisar al padre
+        setForm(p);                 // opcional: resetear cambios
+    }
 
     async function save(e: React.FormEvent) {
         e.preventDefault();
@@ -29,14 +45,21 @@ export default function EditPatientInline({ p }: { p: PatientEditable }) {
             setErr(data?.error ?? `Error ${res.status}`);
             return;
         }
+        onEditingChange?.(false);   // ocultar acciones antes del reload (nice UX)
         location.reload(); // simple
     }
 
     if (!editing) {
         return (
-            <button className="border px-3 py-2 rounded" onClick={() => setEditing(true)}>
-                Editar paciente
-            </button>
+            <IconButton
+                variant="subtle"
+                size="md"
+                aria-label="Editar paciente"
+                title="Editar paciente"
+                onClick={startEdit}
+            >
+                <Pencil className="h-4 w-4" />
+            </IconButton>
         );
     }
 
@@ -53,8 +76,12 @@ export default function EditPatientInline({ p }: { p: PatientEditable }) {
             <textarea className="border p-2 w-full" placeholder="Notas" value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value || null })} />
             {err && <p className="text-red-600 text-sm">{err}</p>}
             <div className="flex gap-2">
-                <button className="border px-3 py-2 rounded">Guardar</button>
-                <button type="button" className="border px-3 py-2 rounded" onClick={() => setEditing(false)}>Cancelar</button>
+                <IconButton type="submit" variant="primary" aria-label="Guardar" title="Guardar">
+                    <Save className="h-4 w-4" />
+                </IconButton>
+                <IconButton type="button" variant="ghost" aria-label="Cancelar" title="Cancelar" onClick={cancelEdit}>
+                    <X className="h-4 w-4" />
+                </IconButton>
             </div>
         </form>
     );

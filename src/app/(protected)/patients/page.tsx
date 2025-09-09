@@ -3,6 +3,8 @@ import { patients } from "@/lib/schema";
 import { desc, ilike, or } from "drizzle-orm";
 import Link from "next/link";
 import DeletePatientButton from "@/app/components/DeletePatientButton";
+import EditPatientInline from "@/app/components/EditPatientInline";
+import PatientsSearchBox from "@/app/components/PatientsSearchBox";
 
 export const dynamic = "force-dynamic";
 // export const revalidate = 0; // opcional
@@ -23,12 +25,12 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
   )
     .orderBy(desc(patients.createdAt))
     .limit(50);
+
   return (
     <main className="p-6">
-      <form className="flex gap-2 mb-4">
-        <input name="q" defaultValue={q} placeholder="Buscar por nombre o DNI" className="border p-2 rounded w-full" />
-        <button className="border px-3 py-2 rounded">Buscar</button>
-      </form>
+      <div className="flex gap-2 mb-4">
+        <PatientsSearchBox />
+      </div>
       <ul className="space-y-2">
         {rows.map(p => (
           <li key={p.id} className="border p-3 rounded flex items-start justify-between gap-3">
@@ -36,6 +38,17 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
               <Link href={`/patients/${p.id}`} className="font-medium">{p.fullName}</Link>
               {p.phone ? <div className="text-sm text-gray-600">{p.phone}</div> : null}
             </div>
+            <EditPatientInline
+              p={{
+                id: p.id,
+                fullName: p.fullName,
+                docNumber: p.docNumber ?? null,
+                phone: p.phone ?? null,
+                email: p.email ?? null,
+                insuranceName: p.insuranceName ?? null,
+                insuranceNumber: p.insuranceNumber ?? null,
+                notes: p.notes ?? null
+              }} />
             <DeletePatientButton id={p.id} name={p.fullName} />
           </li>
         ))}

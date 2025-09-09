@@ -5,7 +5,6 @@ import EditPatientInline from "./EditPatientInline";
 import DeletePatientButton from "@/app/components/DeletePatientButton";
 
 type Tab = "datos" | "consultas" | "archivos";
-
 type Visit = { id: string; note?: string | null; notes?: string | null; date?: string | null };
 type FileRow = { id: string; url: string; filename: string; contentType?: string | null; uploadedAt?: string | null };
 type PatientSafe = {
@@ -30,6 +29,8 @@ export default function PatientTabs({
     patient, visits, files,
 }: { patient: PatientSafe; visits: Visit[]; files: FileRow[] }) {
     const [tab, setTab] = useState<"datos" | "consultas" | "archivos">("datos");
+    const [isEditing, setIsEditing] = useState(false);
+
     return (
         <div className="space-y-4">
             {/* Tabs */}
@@ -74,8 +75,13 @@ export default function PatientTabs({
                                     insuranceName: patient.insuranceName ?? null,
                                     insuranceNumber: patient.insuranceNumber ?? null,
                                     notes: patient.notes ?? null
-                                }} />
-                            <DeletePatientButton id={patient.id} name={patient.fullName} redirectTo="/patients" />
+                                }}
+                                onEditingChange={setIsEditing}
+                            />
+                            {/* Ocultar eliminar cuando estoy editando */}
+                            {!isEditing && (
+                                <DeletePatientButton id={patient.id} name={patient.fullName} redirectTo="/patients" />
+                            )}
                         </div>
                     </div>
                 </section>
@@ -115,7 +121,8 @@ export default function PatientTabs({
                                     </a>
                                     {isImg && (
                                         <a href={f.url} target="_blank" rel="noreferrer">
-                                            <Image src={f.url} alt={f.filename} className="mt-2 max-h-48 object-contain rounded-lg" />
+                                            <Image src={f.url} alt={f.filename} className="mt-2 max-h-48 object-contain rounded-lg" width={180}
+                                                height={38} />
                                         </a>
                                     )}
                                     {isPdf && (
