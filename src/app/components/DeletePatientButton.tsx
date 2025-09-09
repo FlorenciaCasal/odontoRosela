@@ -18,15 +18,15 @@ export default function DeletePatientButton({ id, name, redirectTo,
             alert("No se pudo eliminar");
         }
     }
-
     return (
-        <IconButton
-            variant="danger"
+        <button
+            onClick={del}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600/50"
             aria-label="Eliminar paciente"
             title="Eliminar paciente"
-            onClick={del}
         >
             <Trash2 className="h-4 w-4" />
-        </IconButton>
+            Eliminar paciente
+        </button>
     );
 }
