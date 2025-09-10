@@ -11,6 +11,49 @@ type Row = {
   xhr?: XMLHttpRequest;
 };
 
+async function maybeCompressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+
+  const MAX_DIM = 2000;      // máx ancho/alto
+  const JPEG_QUALITY = 0.82; // 0..1
+  const MIN_SAVINGS = 0.15;  // si no ahorra al menos 15%, usamos el original
+
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) return file;
+
+  let { width, height } = bitmap;
+  const scale = MAX_DIM / Math.max(width, height);
+  const targetW = scale < 1 ? Math.round(width * scale) : width;
+  const targetH = scale < 1 ? Math.round(height * scale) : height;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) { bitmap.close?.(); return file; }
+
+  ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+  bitmap.close?.();
+
+  // PNG chico suele convenir dejarlo como PNG
+  const preferPng = file.type === "image/png" && file.size < 800 * 1024;
+  const mime = preferPng ? "image/png" : "image/jpeg";
+
+  const blob: Blob | null = await new Promise(res =>
+    canvas.toBlob(res, mime, preferPng ? undefined : JPEG_QUALITY)
+  );
+  if (!blob) return file;
+
+  if (blob.size > file.size * (1 - MIN_SAVINGS)) {
+    return file; // no vale la pena
+  }
+  const newName = file.name.replace(/\.(jpg|jpeg|png|webp|heic|heif)$/i, "") +
+    (mime === "image/png" ? ".png" : ".jpg");
+
+  return new File([blob], newName, { type: mime, lastModified: Date.now() });
+}
+
+
 export function UploadZoneProgress({ patientId }: { patientId: string }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -72,7 +115,22 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
     startUpload(next.id, next.file);
   }
 
-  function startUpload(id: string, file: File) {
+  async function startUpload(id: string, file: File) {
+    // (opcional) compresión primero
+    try { file = await maybeCompressImage(file); } catch { }
+
+    // ⬇️ chequeo de tamaño
+    const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_SIZE_BYTES) {
+      setRows(prev => prev.map(r => r.id === id ? {
+        ...r,
+        status: "error",
+        // 👇 le mostramos un error entendible
+        errorText: `Archivo demasiado grande (> ${MAX_SIZE_BYTES / 1024 / 1024} MB)`
+      } : r));
+      return;
+    }
+
     setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "uploading", progress: 0 } : r)));
 
     const fd = new FormData();
@@ -150,9 +208,8 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setHover(true); }}
         onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setHover(false); }}
         onDrop={onDrop}
-        className={`flex items-center justify-between gap-3 rounded-xl border-2 border-dashed p-4 cursor-pointer ${
-          hover ? "border-slate-500 bg-slate-50" : "border-slate-300"
-        }`}
+        className={`flex items-center justify-between gap-3 rounded-xl border-2 border-dashed p-4 cursor-pointer ${hover ? "border-slate-500 bg-slate-50" : "border-slate-300"
+          }`}
         title="Elegí o soltá archivos; se suben automáticamente (de a uno)"
       >
         <span className="text-sm text-slate-700">
@@ -184,9 +241,8 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
 
               <div className="mt-2 h-2 w-full rounded-full bg-slate-200">
                 <div
-                  className={`h-2 rounded-full ${
-                    r.status === "error" ? "bg-red-500" : "bg-slate-700"
-                  }`}
+                  className={`h-2 rounded-full ${r.status === "error" ? "bg-red-500" : "bg-slate-700"
+                    }`}
                   style={{ width: `${r.progress}%` }}
                 />
               </div>

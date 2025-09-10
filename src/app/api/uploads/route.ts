@@ -36,13 +36,21 @@ export async function POST(req: Request) {
   }
 
   // límites básicos
-  const MAX_SIZE = 50 * 1024 * 1024; // 50MB c/u
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB c/u
   const MAX_FILES = 12;
   if (fileList.length > MAX_FILES) {
     return NextResponse.json({ ok: false, error: `Demasiados archivos (máx ${MAX_FILES})` }, { status: 400 });
   }
 
-  const ALLOWED = ["image/", "application/pdf", "video/"];
+  const ALLOWED = [
+    "image/",
+    "application/pdf",
+    "application/msword", // .doc
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    // si querés mantener video, dejalo, pero ojo con el tamaño en Blob
+    // "video/",
+  ];
+  
   for (const f of fileList) {
     if (f.size > MAX_SIZE) {
       return NextResponse.json({ ok: false, error: `Archivo demasiado grande: ${f.name}` }, { status: 400 });
