@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Row = {
   id: string;
@@ -7,6 +7,7 @@ type Row = {
   size: number;
   progress: number; // 0..100
   status: "idle" | "uploading" | "done" | "error" | "canceled";
+  errorText?: string;
   xhr?: XMLHttpRequest;
 };
 
@@ -14,8 +15,21 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [hover, setHover] = useState(false);
-  // 👇 Map persistente entre renders
   const xhrMapRef = useRef<Map<string, XMLHttpRequest>>(new Map());
+
+  // 1) Bloquear drag/drop global fuera de la zona
+  useEffect(() => {
+    const stop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    window.addEventListener("dragover", stop);
+    window.addEventListener("drop", stop);
+    return () => {
+      window.removeEventListener("dragover", stop);
+      window.removeEventListener("drop", stop);
+    };
+  }, []);
 
   function addFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
@@ -29,13 +43,13 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
       file: f,
     }));
 
-    // Pintamos la lista (sin el File)
+    // Pinta filas (sin File)
     setRows(prev => [...incoming.map(({ file, ...rest }) => rest), ...prev]);
 
-    // Subimos cada uno
+    // Subir una por una (paralelo está ok; si querés, se puede serializar)
     incoming.forEach(({ file, id }) => startUpload(id, file));
 
-    // Permitir volver a elegir el mismo archivo
+    // Permitir elegir el mismo archivo de nuevo
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -56,18 +70,23 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
     };
 
     xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
+      const ok = xhr.status >= 200 && xhr.status < 300;
+      if (ok) {
         setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "done", progress: 100 } : r)));
-        xhrMapRef.current.delete(id); // ✅ liberar
+        xhrMapRef.current.delete(id);
         setTimeout(() => location.reload(), 400);
       } else {
-        setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "error" } : r)));
+        setRows(prev =>
+          prev.map(r =>
+            r.id === id ? { ...r, status: "error", errorText: `${xhr.status} ${xhr.statusText || ""}`.trim() } : r
+          )
+        );
         xhrMapRef.current.delete(id);
       }
     };
 
     xhr.onerror = () => {
-      setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "error" } : r)));
+      setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "error", errorText: "Network error" } : r)));
       xhrMapRef.current.delete(id);
     };
 
@@ -76,10 +95,8 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
       xhrMapRef.current.delete(id);
     };
 
-    // guardar para poder cancelar
     xhrMapRef.current.set(id, xhr);
     setRows(prev => prev.map(r => (r.id === id ? { ...r, xhr } : r)));
-
     xhr.send(fd);
   }
 
@@ -87,8 +104,10 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
     addFiles(e.target.files);
   }
 
+  // 2) Manejar drop dentro del label/contendor
   function onDrop(e: React.DragEvent<HTMLLabelElement>) {
     e.preventDefault();
+    e.stopPropagation();
     setHover(false);
     addFiles(e.dataTransfer.files);
   }
@@ -100,18 +119,21 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
 
   return (
     <div className="space-y-3">
+      {/* input nativo oculto, con tipos comunes */}
       <input
         ref={inputRef}
         id="file-input"
         className="sr-only"
         type="file"
         multiple
+        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         onChange={onChoose}
       />
+
       <label
         htmlFor="file-input"
-        onDragOver={(e) => { e.preventDefault(); setHover(true); }}
-        onDragLeave={() => setHover(false)}
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setHover(true); }}
+        onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setHover(false); }}
         onDrop={onDrop}
         className={`flex items-center justify-between gap-3 rounded-xl border-2 border-dashed p-4 cursor-pointer ${
           hover ? "border-slate-500 bg-slate-50" : "border-slate-300"
@@ -126,6 +148,7 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
         </span>
       </label>
 
+      {/* Lista de subidas */}
       {rows.length > 0 && (
         <ul className="space-y-2">
           {rows.map((r) => (
@@ -138,7 +161,7 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
                 <div className="text-xs">
                   {r.status === "uploading" && <span className="text-slate-600">Subiendo…</span>}
                   {r.status === "done" && <span className="text-emerald-700">Listo</span>}
-                  {r.status === "error" && <span className="text-red-600">Error</span>}
+                  {r.status === "error" && <span className="text-red-600">Error{r.errorText ? `: ${r.errorText}` : ""}</span>}
                   {r.status === "canceled" && <span className="text-slate-500">Cancelado</span>}
                 </div>
               </div>

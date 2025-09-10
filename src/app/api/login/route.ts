@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { sessionOptions, getSession } from "@/lib/session";
 
 export async function POST(req: Request) {
   const { email, pass } = await req.json();
