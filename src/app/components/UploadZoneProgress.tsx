@@ -15,14 +15,16 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [hover, setHover] = useState(false);
-  const xhrMapRef = useRef<Map<string, XMLHttpRequest>>(new Map());
 
-  // 1) Bloquear drag/drop global fuera de la zona
+  // refs que persisten entre renders
+  const xhrMapRef = useRef<Map<string, XMLHttpRequest>>(new Map());
+  const queueRef = useRef<Array<{ id: string; file: File }>>([]);
+  const processingRef = useRef(false);
+  const currentIdRef = useRef<string | null>(null);
+
+  // Bloquear drop global fuera de la zona (evita 405 a /patients/:id)
   useEffect(() => {
-    const stop = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
+    const stop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); };
     window.addEventListener("dragover", stop);
     window.addEventListener("drop", stop);
     return () => {
@@ -34,23 +36,40 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
   function addFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
 
-    const incoming = Array.from(fileList).map((f, i) => ({
-      id: (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}_${i}`) + `_${f.name}`,
-      name: f.name,
-      size: f.size,
-      progress: 0,
-      status: "idle" as const,
-      file: f,
-    }));
+    const incoming = Array.from(fileList).map((f, i) => {
+      const id = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}_${i}`) + `_${f.name}`;
+      return { id, name: f.name, size: f.size, file: f };
+    });
 
-    // Pinta filas (sin File)
-    setRows(prev => [...incoming.map(({ file, ...rest }) => rest), ...prev]);
+    // Pintar filas (sin el File)
+    setRows(prev => [
+      ...incoming.map(({ id, name, size }) => ({
+        id, name, size, progress: 0, status: "idle" as const,
+      })),
+      ...prev,
+    ]);
 
-    // Subir una por una (paralelo está ok; si querés, se puede serializar)
-    incoming.forEach(({ file, id }) => startUpload(id, file));
+    // Encolar archivos
+    queueRef.current.push(...incoming.map(({ id, file }) => ({ id, file })));
 
-    // Permitir elegir el mismo archivo de nuevo
+    // Permitir volver a elegir el mismo archivo
     if (inputRef.current) inputRef.current.value = "";
+
+    // Disparar procesamiento si no está en curso
+    processNext();
+  }
+
+  function processNext() {
+    if (processingRef.current) return;
+    const next = queueRef.current.shift();
+    if (!next) {
+      // Cola vacía y nada subiendo: refrescar una vez para ver los nuevos archivos
+      if (!currentIdRef.current) setTimeout(() => location.reload(), 400);
+      return;
+    }
+    processingRef.current = true;
+    currentIdRef.current = next.id;
+    startUpload(next.id, next.file);
   }
 
   function startUpload(id: string, file: File) {
@@ -69,31 +88,26 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
       setRows(prev => prev.map(r => (r.id === id ? { ...r, progress: pct } : r)));
     };
 
+    const finalize = (update: Partial<Row>) => {
+      setRows(prev => prev.map(r => (r.id === id ? { ...r, ...update } : r)));
+      xhrMapRef.current.delete(id);
+      processingRef.current = false;
+      currentIdRef.current = null;
+      // Continúa con el siguiente
+      processNext();
+    };
+
     xhr.onload = () => {
       const ok = xhr.status >= 200 && xhr.status < 300;
       if (ok) {
-        setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "done", progress: 100 } : r)));
-        xhrMapRef.current.delete(id);
-        setTimeout(() => location.reload(), 400);
+        finalize({ status: "done", progress: 100 });
       } else {
-        setRows(prev =>
-          prev.map(r =>
-            r.id === id ? { ...r, status: "error", errorText: `${xhr.status} ${xhr.statusText || ""}`.trim() } : r
-          )
-        );
-        xhrMapRef.current.delete(id);
+        finalize({ status: "error", errorText: `${xhr.status} ${xhr.statusText || ""}`.trim() });
       }
     };
 
-    xhr.onerror = () => {
-      setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "error", errorText: "Network error" } : r)));
-      xhrMapRef.current.delete(id);
-    };
-
-    xhr.onabort = () => {
-      setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "canceled" } : r)));
-      xhrMapRef.current.delete(id);
-    };
+    xhr.onerror = () => finalize({ status: "error", errorText: "Network error" });
+    xhr.onabort = () => finalize({ status: "canceled" });
 
     xhrMapRef.current.set(id, xhr);
     setRows(prev => prev.map(r => (r.id === id ? { ...r, xhr } : r)));
@@ -104,7 +118,6 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
     addFiles(e.target.files);
   }
 
-  // 2) Manejar drop dentro del label/contendor
   function onDrop(e: React.DragEvent<HTMLLabelElement>) {
     e.preventDefault();
     e.stopPropagation();
@@ -114,12 +127,14 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
 
   function cancel(id: string) {
     const xhr = xhrMapRef.current.get(id);
-    if (xhr) xhr.abort();
+    if (xhr) xhr.abort(); // al abortar, se llama finalize y avanza la cola
+    // si está en cola (aún no subiendo), la removemos
+    queueRef.current = queueRef.current.filter(item => item.id !== id);
+    setRows(prev => prev.map(r => (r.id === id ? { ...r, status: "canceled" } : r)));
   }
 
   return (
     <div className="space-y-3">
-      {/* input nativo oculto, con tipos comunes */}
       <input
         ref={inputRef}
         id="file-input"
@@ -138,17 +153,16 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
         className={`flex items-center justify-between gap-3 rounded-xl border-2 border-dashed p-4 cursor-pointer ${
           hover ? "border-slate-500 bg-slate-50" : "border-slate-300"
         }`}
-        title="Elegí o soltá archivos; se suben automáticamente"
+        title="Elegí o soltá archivos; se suben automáticamente (de a uno)"
       >
         <span className="text-sm text-slate-700">
-          Elegí o soltá archivos — se suben automáticamente
+          Elegí o soltá archivos — se suben automáticamente (de a uno)
         </span>
         <span className="rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
           Elegir archivos
         </span>
       </label>
 
-      {/* Lista de subidas */}
       {rows.length > 0 && (
         <ul className="space-y-2">
           {rows.map((r) => (
@@ -161,14 +175,18 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
                 <div className="text-xs">
                   {r.status === "uploading" && <span className="text-slate-600">Subiendo…</span>}
                   {r.status === "done" && <span className="text-emerald-700">Listo</span>}
-                  {r.status === "error" && <span className="text-red-600">Error{r.errorText ? `: ${r.errorText}` : ""}</span>}
+                  {r.status === "error" && (
+                    <span className="text-red-600">Error{r.errorText ? `: ${r.errorText}` : ""}</span>
+                  )}
                   {r.status === "canceled" && <span className="text-slate-500">Cancelado</span>}
                 </div>
               </div>
 
               <div className="mt-2 h-2 w-full rounded-full bg-slate-200">
                 <div
-                  className={`h-2 rounded-full ${r.status === "error" ? "bg-red-500" : "bg-slate-700"}`}
+                  className={`h-2 rounded-full ${
+                    r.status === "error" ? "bg-red-500" : "bg-slate-700"
+                  }`}
                   style={{ width: `${r.progress}%` }}
                 />
               </div>
@@ -181,6 +199,15 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
                     type="button"
                   >
                     Cancelar
+                  </button>
+                )}
+                {r.status === "idle" && (
+                  <button
+                    onClick={() => cancel(r.id)}
+                    className="rounded border px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                    type="button"
+                  >
+                    Quitar
                   </button>
                 )}
               </div>
