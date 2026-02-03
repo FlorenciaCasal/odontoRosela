@@ -12,7 +12,7 @@ const ACCESS_KEY = process.env.ACCESS_KEY2!;
 const SESSION_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
 
 // const PUBLIC_PREFIXES = ["/", "/login", "/api/google/oauth", "/api/patients/index", "/api/health-db"];
-const PUBLIC_PREFIXES = ["/login", "/api/google/oauth", "/api/health-db"];
+const PUBLIC_PREFIXES = ["/login", "/api/google/oauth", "/api/health-db", "/api/patients/index"];
 
 function isProtectedPath(pathname: string) {
   return (
