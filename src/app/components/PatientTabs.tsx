@@ -152,6 +152,28 @@ export default function PatientTabs({
                                         </video>
                                     )}
                                     {f.uploadedAt && <div className="mt-2 text-xs text-slate-500">{fmt(f.uploadedAt)}</div>}
+
+                                    {f.uploadedAt && (
+                                        <button
+                                            onClick={async () => {
+                                                if (!confirm("Eliminar este archivo?")) return;
+
+                                                const res = await fetch(`/api/uploads/${f.id}`, {
+                                                    method: "DELETE",
+                                                });
+
+                                                if (!res.ok) {
+                                                    alert("No se pudo eliminar el archivo");
+                                                    return;
+                                                }
+
+                                                location.reload();
+                                            }}
+                                            className="mt-2 text-xs text-red-600 cursor-pointer hover:underline"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    )}
                                 </li>
                             );
                         })}

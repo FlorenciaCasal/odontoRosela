@@ -20,12 +20,12 @@ export default function DeletePatientButton({ id, name, redirectTo,
 return (
    <button
      onClick={del}
-     className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600/50 w-full sm:w-auto min-w-44 cursor-pointer"
+     className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium bg-white text-red-600 border-red-200 hover:bg-red-50 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600/50 w-auto cursor-pointer"
      aria-label="Eliminar paciente"
-     title="Eliminar paciente"
+    //  title="Eliminar paciente"
    >
      <Trash2 className="h-4 w-4" />
-     Eliminar paciente
+     {/* Eliminar paciente */}
    </button>
  );
 }

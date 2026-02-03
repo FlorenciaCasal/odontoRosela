@@ -27,7 +27,12 @@ export default function PatientsSearchBox() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por nombre o DNI"
-            className="border p-2 rounded w-full"
+            // className="border p-2 rounded w-full"
+            className="
+    w-full rounded-xl border border-slate-300 bg-white
+    px-4 py-2.5 text-sm
+    focus:border-slate-400 focus:outline-none focus:ring-0
+  "
             autoFocus
         />
     );

@@ -7,11 +7,14 @@ import EditPatientInline from "@/app/components/EditPatientInline";
 import PatientsSearchBox from "@/app/components/PatientsSearchBox";
 
 export const dynamic = "force-dynamic";
-// export const revalidate = 0; // opcional
 
-export default async function PatientsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function PatientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const { q = "" } = await searchParams;
-  // ✅ sin "as any": aplicá .where(...) sólo si hay q
+
   const base = db.select().from(patients);
   const rows = await (
     q
@@ -27,32 +30,122 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
     .limit(50);
 
   return (
-    <main className="p-6">
-      <div className="flex gap-2 mb-4">
-        <PatientsSearchBox />
+    <main className="min-h-screen bg-app px-4 py-8">
+      <div className="mx-auto w-full max-w-4xl space-y-5">
+        {/* Header */}
+        {/* <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-strong">Pacientes</h1>
+            <p className="text-sm text-muted">
+              {q ? (
+                <>
+                  Mostrando resultados para <span className="font-medium">“{q}”</span>
+                </>
+              ) : (
+                "Buscá por nombre o DNI."
+              )}
+            </p>
+          </div>
+
+          <Link
+            href="/patients/new"
+            className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium hover:bg-white/5"
+          >
+            + Nuevo paciente
+          </Link>
+        </div> */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+              Pacientes
+            </h1>
+            <p className="text-sm text-slate-500">
+              {q
+                ? <>Resultados para <span className="font-medium">“{q}”</span></>
+                : "Buscá, editá y gestioná pacientes del consultorio"}
+            </p>
+          </div>
+
+          <Link
+            href="/patients/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-medium text-white hover:bg-neutral-900"
+          >
+            + Nuevo paciente
+          </Link>
+        </div>
+
+
+        {/* Search */}
+        {/* <div className="card p-3"> */}
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <PatientsSearchBox />
+        </div>
+
+        {/* List */}
+        <ul className="space-y-3">
+          {rows.map((p) => {
+            const secondary = [
+              p.docNumber ? `DNI: ${p.docNumber}` : null,
+              p.phone ? `Tel: ${p.phone}` : null,
+              p.email ? p.email : null,
+            ].filter(Boolean);
+
+            return (
+              <li key={p.id} className="card p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  {/* Left */}
+                  <div className="min-w-0">
+                    <Link
+                      href={`/patients/${p.id}`}
+                      className="block truncate text-base font-semibold text-strong hover:underline"
+                      title={p.fullName}
+                    >
+                      {p.fullName}
+                    </Link>
+
+                    {secondary.length ? (
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted">
+                        {secondary.map((t, i) => (
+                          <span key={i} className="whitespace-nowrap">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-1 text-sm text-muted">Sin datos de contacto</div>
+                    )}
+                  </div>
+
+                  {/* Right / Actions */}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    <EditPatientInline
+                      p={{
+                        id: p.id,
+                        fullName: p.fullName,
+                        docNumber: p.docNumber ?? null,
+                        phone: p.phone ?? null,
+                        email: p.email ?? null,
+                        insuranceName: p.insuranceName ?? null,
+                        insuranceNumber: p.insuranceNumber ?? null,
+                        notes: p.notes ?? null,
+                      }}
+                    />
+                    <DeletePatientButton id={p.id} name={p.fullName} />
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Empty state */}
+        {rows.length === 0 ? (
+          <div className="card p-6 text-center text-sm text-muted">
+            No se encontraron pacientes.
+          </div>
+        ) : null}
       </div>
-      <ul className="space-y-2">
-        {rows.map(p => (
-          <li key={p.id} className="border p-3 rounded flex items-start justify-between gap-3">
-            <div>
-              <Link href={`/patients/${p.id}`} className="font-medium">{p.fullName}</Link>
-              {p.phone ? <div className="text-sm text-gray-600">{p.phone}</div> : null}
-            </div>
-            <EditPatientInline
-              p={{
-                id: p.id,
-                fullName: p.fullName,
-                docNumber: p.docNumber ?? null,
-                phone: p.phone ?? null,
-                email: p.email ?? null,
-                insuranceName: p.insuranceName ?? null,
-                insuranceNumber: p.insuranceNumber ?? null,
-                notes: p.notes ?? null
-              }} />
-            <DeletePatientButton id={p.id} name={p.fullName} />
-          </li>
-        ))}
-      </ul>
     </main>
   );
 }
+

@@ -23,7 +23,7 @@ export default function IconButton({
   title, className, disabled, ...a11y
 }: Props) {
   const base =
-    "inline-flex items-center justify-center rounded-full border transition " +
+    "inline-flex items-center justify-center rounded-lg border transition " +
     "focus-visible:outline-none focus-visible:ring-2 disabled:opacity-60 disabled:cursor-not-allowed";
 
   const sizes = {

@@ -24,6 +24,52 @@ function inferExt(file: File) {
   return "bin";
 }
 
+
+/**
+ * ─────────────────────────────────────────────────────────────
+ * FUTURO: MIGRACIÓN A AMAZON S3 (PLAN DOCUMENTADO)
+ * ─────────────────────────────────────────────────────────────
+ *
+ * Estado actual (OK para MVP / consultorio individual):
+ * - Archivos pesados → Vercel Blob (public, URLs no adivinables)
+ * - DB (Neon/Postgres) guarda solo metadata
+ *
+ * Motivos para migrar a S3 en el futuro:
+ * - Estudios médicos más pesados (PDF grandes, imágenes clínicas)
+ * - Control de costos por GB
+ * - Acceso privado (URLs firmadas, compliance salud)
+ *
+ * Qué NO cambia:
+ * - Frontend (UploadZoneProgress)
+ * - Flujo de subida (FormData + patientId)
+ * - Base de datos (patients / files)
+ * - Backend sigue en Vercel
+ *
+ * Qué SÍ cambia:
+ * 1) Reemplazar:
+ *      import { put } from "@vercel/blob"
+ *    por:
+ *      AWS SDK (PutObjectCommand)
+ *
+ * 2) Guardar en DB:
+ *    - bucket
+ *    - key (path en S3)
+ *    en vez de URL pública
+ *
+ * 3) Acceso a archivos:
+ *    - generar URLs firmadas (presigned URLs)
+ *    - expiración corta (ej: 5–15 min)
+ *
+ * Infra requerida:
+ * - Solo Amazon S3 (NO EC2, NO backend en AWS)
+ * - IAM user con permisos mínimos al bucket
+ *
+ * Nota:
+ * - Se puede convivir con Vercel Blob durante la transición
+ * - Migración no es urgente mientras los archivos sean chicos
+ */
+
+
 export async function POST(req: Request) {
   const form = await req.formData();
   const patientId = form.get("patientId") as string | null;
@@ -36,7 +82,7 @@ export async function POST(req: Request) {
   }
 
   // límites básicos
-  const MAX_SIZE = 10 * 1024 * 1024; // 10MB c/u
+  const MAX_SIZE = 25 * 1024 * 1024; // 25MB c/u
   const MAX_FILES = 12;
   if (fileList.length > MAX_FILES) {
     return NextResponse.json({ ok: false, error: `Demasiados archivos (máx ${MAX_FILES})` }, { status: 400 });
@@ -45,12 +91,10 @@ export async function POST(req: Request) {
   const ALLOWED = [
     "image/",
     "application/pdf",
-    "application/msword", // .doc
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-    // si querés mantener video, dejalo, pero ojo con el tamaño en Blob
-    // "video/",
+    // "application/msword", // .doc
+    // "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
   ];
-  
+
   for (const f of fileList) {
     if (f.size > MAX_SIZE) {
       return NextResponse.json({ ok: false, error: `Archivo demasiado grande: ${f.name}` }, { status: 400 });
@@ -62,7 +106,8 @@ export async function POST(req: Request) {
   }
 
   // subidas en paralelo con nombres imposibles de adivinar (no exponemos el original)
-  const results = await Promise.all(
+  // const results = await Promise.all(
+  await Promise.all(
     fileList.map(async (file) => {
       const ext = inferExt(file);
       const key = `patients/${patientId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
@@ -85,5 +130,7 @@ export async function POST(req: Request) {
   );
 
   // volvemos a la ficha
-  return NextResponse.redirect(new URL(`/patients/${patientId}`, req.url));
+  // return NextResponse.redirect(new URL(`/patients/${patientId}`, req.url));
+  return NextResponse.json({ ok: true });
+
 }

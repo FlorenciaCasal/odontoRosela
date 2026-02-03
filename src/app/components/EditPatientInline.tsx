@@ -54,12 +54,12 @@ export default function EditPatientInline({ p, onEditingChange }: {
             <button
                 type="button"
                 onClick={startEdit}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50 w-full sm:w-auto min-w-44 cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50 w-auto cursor-pointer"
                 aria-label="Editar paciente"
-                title="Editar paciente"
+            // title="Editar paciente"
             >
                 <Pencil className="h-4 w-4" />
-                Editar paciente
+                {/* Editar paciente */}
             </button>
         );
     }
@@ -82,11 +82,20 @@ export default function EditPatientInline({ p, onEditingChange }: {
             <textarea className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Notas" value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value || null })} />
             {err && <p className="text-red-600 text-sm">{err}</p>}
             <div className="flex gap-2">
-                <IconButton type="submit" variant="primary" aria-label="Guardar" title="Guardar" className="w-full sm:w-auto min-w-44">
+                {/* <IconButton type="submit" variant="primary" aria-label="Guardar" title="Guardar" className="w-full sm:w-auto min-w-44">
                     <Save className="h-4 w-4" />
                 </IconButton>
                 <IconButton type="button" variant="ghost" aria-label="Cancelar" title="Cancelar" onClick={cancelEdit} className="w-full sm:w-auto min-w-44">
                     +   <X className="h-4 w-4" />
+                </IconButton> */}
+                <IconButton type="submit" variant="primary" aria-label="Guardar paciente" className="min-w-44">
+                    <Save className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">Guardar</span>
+                </IconButton>
+
+                <IconButton type="button" variant="ghost" aria-label="Cancelar edición" onClick={cancelEdit} className="min-w-44">
+                    <X className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">Cancelar</span>
                 </IconButton>
             </div>
         </form>

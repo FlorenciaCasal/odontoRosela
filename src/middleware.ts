@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
 
+
 export const config = {
   // Interceptamos todo para poder setear cookie con ?k=ACCESS_KEY2
   matcher: ["/((?!_next|favicon.ico).*)"],
@@ -10,10 +11,18 @@ const COOKIE_NAME = "odonto_auth";
 const ACCESS_KEY = process.env.ACCESS_KEY2!;
 const SESSION_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
 
-const PUBLIC_PREFIXES = ["/", "/login", "/api/google/oauth", "/api/patients/index", "/api/health-db"];
+// const PUBLIC_PREFIXES = ["/", "/login", "/api/google/oauth", "/api/patients/index", "/api/health-db"];
+const PUBLIC_PREFIXES = ["/login", "/api/google/oauth", "/api/health-db"];
 
 function isProtectedPath(pathname: string) {
-  return pathname.startsWith("/patients") || pathname.startsWith("/visits") || pathname.startsWith("/api");
+  return (
+    pathname === "/dashboard" ||
+    pathname.startsWith("/patients") ||
+    pathname.startsWith("/visits") ||
+    pathname.startsWith("/api/patients") ||
+    pathname.startsWith("/api/visits") ||
+    pathname.startsWith("/api/uploads")
+  );
 }
 
 async function makeSessionToken() {
@@ -49,7 +58,8 @@ export default async function middleware(req: NextRequest) {
       name: COOKIE_NAME,
       value: token,
       httpOnly: true,
-      secure: true,
+      // secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 180, // 180 días
@@ -61,7 +71,7 @@ export default async function middleware(req: NextRequest) {
     const token = req.cookies.get(COOKIE_NAME)?.value;
     if (!(await isValidSession(token))) {
       const to = url.clone();
-      to.pathname = "/"; // si ya no usás /login, podés redirigir a "/"
+      to.pathname = "/login";
       to.search = "";
       return NextResponse.redirect(to);
     }

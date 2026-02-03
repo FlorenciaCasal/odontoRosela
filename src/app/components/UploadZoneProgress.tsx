@@ -267,6 +267,20 @@ export function UploadZoneProgress({ patientId }: { patientId: string }) {
                   </button>
                 )}
               </div>
+              {r.status === "error" && r.errorText && (
+                <div className="mt-2 flex flex-col gap-2 text-xs text-red-600">
+                  <p>
+                    {r.errorText}. Sugerencia: si es una imagen, probá reducirla o exportarla a PDF.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setRows(prev => prev.filter(x => x.id !== r.id))}
+                    className="self-end rounded border px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                  >
+                    Aceptar
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
