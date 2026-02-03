@@ -191,3 +191,133 @@ Si la odontóloga usa un calendario secundario:
 ---
 
 > **Listo.** Con este manual, la odontóloga puede usar la app sin depender de soporte continuo, y vos podés cerrar la entrega con claridad. Si querés, agregamos capturas y lo exportamos a PDF para enviarle por WhatsApp/mail.
+
+🦷 Sistema de Gestión Clínica Odontológica
+Información de funcionamiento y costos
+📌 ¿Qué es esta aplicación?
+
+Es una aplicación web privada, diseñada para uso profesional individual, que permite:
+
+Gestionar pacientes
+
+Registrar consultas y notas clínicas
+
+Adjuntar estudios (imágenes y PDFs)
+
+Acceder desde cualquier dispositivo con usuario y contraseña
+
+No requiere instalación.
+
+🔐 Seguridad y privacidad
+
+Acceso solo con credenciales
+
+Los pacientes no son públicos
+
+Cada estudio queda asociado a un paciente
+
+No aparece en buscadores
+
+Datos almacenados en infraestructura profesional
+
+🗂️ ¿Dónde se guardan los datos?
+
+La app utiliza tres servicios especializados, cada uno para una función distinta:
+
+1️⃣ Aplicación web
+
+Interfaz que usás todos los días
+
+Siempre disponible online
+
+2️⃣ Base de datos clínica
+
+Guarda:
+
+pacientes
+
+teléfonos, emails
+
+notas clínicas
+
+consultas
+
+👉 No guarda archivos pesados
+
+3️⃣ Almacenamiento de estudios
+
+Guarda:
+
+imágenes (rayos X, fotos)
+
+PDFs
+
+estudios escaneados
+
+👉 Los archivos se almacenan en la nube, no en la computadora.
+
+💰 Costos mensuales reales
+✔️ Costos fijos
+
+Aplicación web: $0
+
+Base de datos: $0 a $5 USD / mes
+
+En la práctica, suele ser $0 durante mucho tiempo.
+
+📦 Costos variables (solo si se usan estudios)
+A) Almacenamiento
+
+Depende de cuánto espacio ocupen los estudios.
+
+Ejemplo aproximado:
+
+Pacientes	Estudios totales	Costo mensual
+100	~2.5 GB	~$0.05 USD
+300	~7.5 GB	~$0.20 USD
+500	~12.5 GB	~$0.30 USD
+B) Transferencia (uso de los archivos)
+
+La transferencia se cobra cuando:
+
+abrís un estudio
+
+descargás un archivo
+
+Ejemplo:
+
+Abrir estudios por un total de 20 GB en un mes
+
+Costo estimado: $1–2 USD
+
+📊 Ejemplo completo de costo mensual
+
+Consultorio con:
+
+300 pacientes
+
+varios estudios por paciente
+
+uso normal diario
+
+Costo mensual estimado total:
+
+👉 Entre $1 y $3 USD
+
+📈 ¿Puede crecer el costo?
+
+Solo si se cargan:
+
+estudios muy pesados
+
+resonancias completas
+
+tomografías grandes
+
+En ese caso:
+
+se puede migrar el sistema de archivos
+
+sin perder datos
+
+sin cambiar la app
