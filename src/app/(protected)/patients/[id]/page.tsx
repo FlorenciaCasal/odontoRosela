@@ -99,12 +99,6 @@ export default async function PatientDetail(
 
 
         return (
-            // <main className="p-6 space-y-8">
-            //     {/* encabezado con links a Calendar si querés mantenerlo */}
-            //     <PatientTabs patient={safe} visits={safeVisits} files={safeFiles} />
-            // </main>
-            // <main className="min-h-screen bg-slate-50">
-            //     <div className="mx-auto max-w-6xl px-4 py-6">
             <main className="min-h-screen">
                 <div className="container-app py-6">
                     {/* encabezado con links a Calendar si querés mantenerlo */}

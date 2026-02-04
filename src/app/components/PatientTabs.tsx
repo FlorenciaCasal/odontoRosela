@@ -4,6 +4,8 @@ import { useState } from "react";
 import EditPatientInline from "./EditPatientInline";
 import DeletePatientButton from "@/app/components/DeletePatientButton";
 import { UploadZoneProgress } from "./UploadZoneProgress";
+import Link from "next/link";
+
 
 type Tab = "datos" | "consultas" | "archivos";
 type Visit = { id: string; note?: string | null; notes?: string | null; date?: string | null };
@@ -13,16 +15,32 @@ type PatientSafe = {
     insuranceNumber?: string | null; phone?: string | null; email?: string | null; notes?: string | null; createdAt?: string | null;
 };
 
+// function fmt(d?: string | null) {
+//     if (!d) return "";
+//     try { return new Date(d).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" }); }
+//     catch { return d; }
+// }
 function fmt(d?: string | null) {
     if (!d) return "";
-    try { return new Date(d).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" }); }
-    catch { return d; }
+    try {
+        return new Date(d).toLocaleString("es-AR", {
+            timeZone: "America/Argentina/Buenos_Aires",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false, // ← 24 hs
+        });
+    } catch {
+        return d;
+    }
 }
 
 // ✅ Lista de tabs tipada (sin any)
 const TABS = [
     { key: "datos", label: "Datos" },
-    { key: "consultas", label: "Consultas" },
+    { key: "consultas", label: "Evolución" },
     { key: "archivos", label: "Archivos" },
 ] as const satisfies ReadonlyArray<{ key: Tab; label: string }>;
 
@@ -102,6 +120,21 @@ export default function PatientTabs({
 
             {tab === "consultas" && (
                 <section className="space-y-3">
+
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-semibold text-slate-900">Evolución</h3>
+                            <p className="text-xs text-slate-500">Notas clínicas por atención.</p>
+                        </div>
+
+                        <Link
+                            href={`/visits/new?patientId=${patient.id}`}
+                            className="btn-primary"
+                        >
+                            Nueva evolución
+                        </Link>
+                    </div>
+
                     {visits.length === 0 && <div className="text-sm text-gray-600">Sin consultas.</div>}
                     {visits.map(v => (
                         <article key={v.id} className="flex gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
