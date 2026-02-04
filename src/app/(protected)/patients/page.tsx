@@ -6,6 +6,7 @@ import DeletePatientButton from "@/app/components/DeletePatientButton";
 import EditPatientInline from "@/app/components/EditPatientInline";
 import PatientsSearchBox from "@/app/components/PatientsSearchBox";
 import formatName from "@/utils/formatName";
+import PatientRow from "@/app/components/PatientRow";
 
 export const dynamic = "force-dynamic";
 
@@ -68,62 +69,14 @@ export default async function PatientsPage({
         </div>
 
         {/* List */}
-        <ul className="space-y-3">
-          {rows.map((p) => {
-            const secondary = [
-              p.docNumber ? `DNI: ${p.docNumber}` : null,
-              p.phone ? `Tel: ${p.phone}` : null,
-              // p.email ? p.email : null,
-            ].filter(Boolean);
+       
 
-            return (
-              <li key={p.id} className="card p-2 sm:p-4">
-                <div className="flex flex-row gap-3 items-center justify-between">
 
-                  {/* Left */}
-                  <div className="min-w-0">
-                    <Link
-                      href={`/patients/${p.id}`}
-                      className="block truncate text-base sm:text-lg font-semibold text-strong hover:underline"
-                      title={p.fullName}
-                    >
-                      {formatName(p.fullName) || "-"}
-                    </Link>
-
-                    {secondary.length ? (
-                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0 text-sm text-muted">
-                        {secondary.map((t, i) => (
-                          <span key={i} className="whitespace-nowrap">
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0 text-sm text-muted">Sin datos de contacto</div>
-                    )}
-                  </div>
-
-                  {/* Right / Actions */}
-               <div className="flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-3">
-                    <EditPatientInline
-                      p={{
-                        id: p.id,
-                        fullName: p.fullName,
-                        docNumber: p.docNumber ?? null,
-                        phone: p.phone ?? null,
-                        email: p.email ?? null,
-                        insuranceName: p.insuranceName ?? null,
-                        insuranceNumber: p.insuranceNumber ?? null,
-                        notes: p.notes ?? null,
-                      }}
-                    />
-                    <DeletePatientButton id={p.id} name={p.fullName} />
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+       <ul className="space-y-3">
+  {rows.map((p) => (
+    <PatientRow key={p.id} p={p} />
+  ))}
+</ul>
 
         {/* Empty state */}
         {rows.length === 0 ? (

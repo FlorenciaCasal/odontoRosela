@@ -45,7 +45,8 @@ export default function EditPatientInline({ p, onEditingChange }: {
             setErr(data?.error ?? `Error ${res.status}`);
             return;
         }
-        onEditingChange?.(false);   // ocultar acciones antes del reload (nice UX)
+        // onEditingChange?.(false);   // ocultar acciones antes del reload (nice UX)
+         // ❌ NO hagas onEditingChange(false) acá
         location.reload(); // simple
     }
 
@@ -78,7 +79,7 @@ export default function EditPatientInline({ p, onEditingChange }: {
     }
 
     return (
-        <form onSubmit={save} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <form onSubmit={save} className="w-full space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <input
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
                 value={form.fullName}
@@ -94,7 +95,7 @@ export default function EditPatientInline({ p, onEditingChange }: {
             </div>
             <textarea className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400" placeholder="Notas" value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value || null })} />
             {err && <p className="text-red-600 text-sm">{err}</p>}
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
                 <IconButton type="submit" variant="primary" aria-label="Guardar paciente" className="min-w-44">
                     <Save className="h-4 w-4" />
                     <span className="hidden sm:inline ml-2">Guardar</span>
@@ -105,7 +106,34 @@ export default function EditPatientInline({ p, onEditingChange }: {
                     <X className="h-4 w-4" />
                     <span className="hidden sm:inline ml-2">Cancelar</span>
                 </IconButton>
+            </div> */}
+            <div className="flex flex-col gap-3 pt-2">
+                <IconButton
+                    type="submit"
+                    variant="primary"
+                    aria-label="Guardar paciente"
+                    className="w-full"
+                >
+                    <Save className="h-4 w-4" />
+                    <span className="ml-2 cursor-pointer">Guardar</span>
+                </IconButton>
+
+                <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="
+      text-sm
+      text-slate-500
+      underline
+      text-center
+      hover:text-slate-700
+      cursor-pointer
+    "
+                >
+                    Cancelar
+                </button>
             </div>
+
         </form>
     );
 }
