@@ -2,10 +2,7 @@ import { db } from "@/lib/drizzle";
 import { patients } from "@/lib/schema";
 import { desc, ilike, or } from "drizzle-orm";
 import Link from "next/link";
-import DeletePatientButton from "@/app/components/DeletePatientButton";
-import EditPatientInline from "@/app/components/EditPatientInline";
 import PatientsSearchBox from "@/app/components/PatientsSearchBox";
-import formatName from "@/utils/formatName";
 import PatientRow from "@/app/components/PatientRow";
 
 export const dynamic = "force-dynamic";
@@ -69,14 +66,14 @@ export default async function PatientsPage({
         </div>
 
         {/* List */}
-       
 
 
-       <ul className="space-y-3">
-  {rows.map((p) => (
-    <PatientRow key={p.id} p={p} />
-  ))}
-</ul>
+
+        <ul className="space-y-3">
+          {rows.map((p) => (
+             <PatientRow key={p.id} p={p} />
+          ))}
+        </ul>
 
         {/* Empty state */}
         {rows.length === 0 ? (

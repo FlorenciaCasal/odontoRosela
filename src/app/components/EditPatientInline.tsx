@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import IconButton from "@/app/components/ui/IconButton";
-import { Pencil, Save, X } from "lucide-react";
+import { Pencil, Save } from "lucide-react";
 
 type PatientEditable = {
     id: string; fullName: string;

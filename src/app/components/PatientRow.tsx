@@ -4,8 +4,12 @@ import { useState } from "react";
 import formatName from "@/utils/formatName";
 import EditPatientInline from "./EditPatientInline";
 import DeletePatientButton from "./DeletePatientButton";
+import type { InferSelectModel } from "drizzle-orm";
+import { patients } from "@/lib/schema";
 
-export default function PatientRow({ p }: { p: any }) {
+export type Patient = InferSelectModel<typeof patients>;
+
+export default function PatientRow({ p }: { p: Patient }) {
   const [editing, setEditing] = useState(false);
 
   const secondary = [
