@@ -12,6 +12,7 @@
   "dependencies": {
     "@vercel/blob": "latest",
     "@vercel/postgres": "latest",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "latest",
     "googleapis": "^159.0.0",
     "iron-session": "^8.0.4",

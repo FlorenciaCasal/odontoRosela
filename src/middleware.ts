@@ -1,81 +1,89 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SignJWT, jwtVerify } from "jose";
-
+import {
+  REFRESH_COOKIE_NAME,
+  SESSION_COOKIE_NAME,
+  normalizeRedirectPath,
+} from "@/lib/auth/constants";
+import { verifySessionJwt } from "@/lib/auth/jwt";
 
 export const config = {
-  // Interceptamos todo para poder setear cookie con ?k=ACCESS_KEY2
   matcher: ["/((?!_next|favicon.ico).*)"],
 };
 
-const COOKIE_NAME = "odonto_auth";
-const ACCESS_KEY = process.env.ACCESS_KEY2!;
-const SESSION_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET!);
-
-// const PUBLIC_PREFIXES = ["/", "/login", "/api/google/oauth", "/api/patients/index", "/api/health-db"];
-const PUBLIC_PREFIXES = ["/login", "/api/google/oauth", "/api/health-db", "/api/patients/index"];
+const PUBLIC_PREFIXES = [
+  "/",
+  "/login",
+  "/auth/google/start",
+  "/auth/google/callback",
+  "/auth/refresh",
+  "/auth/session/refresh",
+  "/auth/logout",
+  "/api/google/oauth/start",
+  "/api/google/oauth/callback",
+  "/api/patients/index",
+  "/api/calendar/events/upsert-link",
+  "/api/health-db",
+];
 
 function isProtectedPath(pathname: string) {
   return (
     pathname === "/dashboard" ||
     pathname.startsWith("/patients") ||
     pathname.startsWith("/visits") ||
+    pathname.startsWith("/calendar") ||
     pathname.startsWith("/api/patients") ||
+    pathname.startsWith("/api/calendar") ||
     pathname.startsWith("/api/visits") ||
     pathname.startsWith("/api/uploads")
   );
 }
 
-async function makeSessionToken() {
-  return await new SignJWT({ role: "owner" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("180d")
-    .sign(SESSION_SECRET);
+function isProtectedApiPath(pathname: string) {
+  return (
+    pathname.startsWith("/api/patients") ||
+    pathname.startsWith("/api/calendar") ||
+    pathname.startsWith("/api/visits") ||
+    pathname.startsWith("/api/uploads")
+  );
 }
-
-async function isValidSession(token?: string) {
-  if (!token) return false;
-  try { await jwtVerify(token, SESSION_SECRET); return true; } catch { return false; }
-}
-
 
 export default async function middleware(req: NextRequest) {
-  const url = req.nextUrl;
+  const { pathname, search } = req.nextUrl;
 
-  if (PUBLIC_PREFIXES.some((p) => url.pathname.startsWith(p))) {
+  if (pathname.startsWith("/api/calendar/events/") && pathname.endsWith("/link")) {
     return NextResponse.next();
   }
 
-  // auto-enrolar por ?k=ACCESS_KEY2 (no cambia tu Apps Script)
-  const k = url.searchParams.get("k");
-  if (k && k === ACCESS_KEY) {
-    const clean = new URL(req.url);
-    clean.searchParams.delete("k");
-
-    const resp = NextResponse.redirect(clean);
-    const token = await makeSessionToken();
-    resp.cookies.set({
-      name: COOKIE_NAME,
-      value: token,
-      httpOnly: true,
-      // secure: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 180, // 180 días
-    });
-    return resp;
+  if (PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    return NextResponse.next();
   }
 
-  if (isProtectedPath(url.pathname)) {
-    const token = req.cookies.get(COOKIE_NAME)?.value;
-    if (!(await isValidSession(token))) {
-      const to = url.clone();
-      to.pathname = "/login";
-      to.search = "";
-      return NextResponse.redirect(to);
-    }
+  if (!isProtectedPath(pathname)) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  const sessionToken = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const refreshToken = req.cookies.get(REFRESH_COOKIE_NAME)?.value;
+  const session = await verifySessionJwt(sessionToken);
+
+  if (session) {
+    return NextResponse.next();
+  }
+
+  if (isProtectedApiPath(pathname)) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
+  const redirectTo = normalizeRedirectPath(`${pathname}${search}`);
+  const url = req.nextUrl.clone();
+
+  if (refreshToken) {
+    url.pathname = "/auth/session/refresh";
+    url.search = `?redirect=${encodeURIComponent(redirectTo)}`;
+    return NextResponse.redirect(url);
+  }
+
+  url.pathname = "/login";
+  url.search = `?redirect=${encodeURIComponent(redirectTo)}`;
+  return NextResponse.redirect(url);
 }

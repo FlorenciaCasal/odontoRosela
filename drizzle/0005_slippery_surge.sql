@@ -1,0 +1,2 @@
+ALTER TABLE "calendar_event_links" ADD CONSTRAINT "calendar_event_links_linked_requires_patient_chk" CHECK (("calendar_event_links"."status" <> 'linked'::calendar_event_link_status) OR ("calendar_event_links"."patient_id" IS NOT NULL));--> statement-breakpoint
+ALTER TABLE "calendar_event_links" ADD CONSTRAINT "calendar_event_links_ignored_without_patient_chk" CHECK (("calendar_event_links"."status" <> 'ignored'::calendar_event_link_status) OR ("calendar_event_links"."patient_id" IS NULL));
