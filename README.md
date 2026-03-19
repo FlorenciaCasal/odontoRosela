@@ -42,14 +42,8 @@ Al crear un paciente, el sistema bloquea nombres **idénticos** (sin diferenciar
 
 La app usa una **cookie de dispositivo** para habilitar acciones de **escritura** por **180 días**.
 
-* El enlace de los eventos de Google Calendar incluye `?k=ACCESS_KEY2` (link **auto‑enrolador**).
-* **Qué pasa al tocarlo**:
-
-  * Si no hay cookie → la setea y redirige a la ficha del paciente.
-  * Si ya hay cookie → simplemente abre la ficha normalmente.
-* Si abrís desde otro navegador/app (p. ej. el visor interno de Calendar), **tocar el link** también deja ese navegador listo.
-
-> Si se cambia el valor de `ACCESS_KEY2`, todos los dispositivos deberán entrar una vez con el nuevo `?k=`.
+* El enlace de Google Calendar usa la integración autenticada con `INTEGRATION_TOKEN`.
+* Si abrís desde otro navegador/app (p. ej. el visor interno de Calendar), el acceso sigue pasando por el flujo autenticado de la app.
 
 ---
 
@@ -61,7 +55,7 @@ La app usa una **cookie de dispositivo** para habilitar acciones de **escritura*
 2. En **Project Settings → Script Properties**, configurar:
 
    * `BASE_URL` → `https://odontologiapuelo.vercel.app`
-   * `ACCESS_KEY` → **el mismo valor** de `ACCESS_KEY2` en Vercel
+   * `INTEGRATION_TOKEN` → el mismo valor configurado en Vercel para la integración
    * *(Opcional)* `CALENDAR_ID` → `primary` (o el ID del calendario si usa otro)
 3. Crear un **trigger de tiempo** (cada 5 minutos) que ejecute la función principal (ver punto 5.1).
 
@@ -123,14 +117,13 @@ En la ficha → pestaña **Archivos**:
 
 Variables claves:
 
-* `ACCESS_KEY2` → usada por el **magic link** y Apps Script.
+* `INTEGRATION_TOKEN` → usada por Apps Script y endpoints de integración.
 * `NEON_DATABASE_URL` → conexión a la base (Neon).
 * `BLOB_READ_WRITE_TOKEN` → token de escritura de Vercel Blob.
 
 **Buenas prácticas**:
 
-* Si se sospecha acceso indebido, **rotar `ACCESS_KEY2`** en Vercel y **actualizar `ACCESS_KEY`** en Apps Script con el **mismo valor**.
-* Tras rotar, los dispositivos deben tocar nuevamente un link con `?k=…` (o abrir cualquier ficha con `?k=`) para quedar enrolados.
+* Si se sospecha acceso indebido, **rotar `INTEGRATION_TOKEN`** en Vercel y actualizar el mismo valor en Apps Script.
 
 ---
 

@@ -96,13 +96,19 @@ export default async function PatientDetail(
             contentType: f.contentType ?? null,
             uploadedAt: f.uploadedAt?.toISOString?.() ?? null,
         }));
+        const rctaBaseUrl = process.env.RCTA_BASE_URL?.trim() || null;
 
 
         return (
             <main className="min-h-screen">
                 <div className="container-app py-6">
                     {/* encabezado con links a Calendar si querés mantenerlo */}
-                    <PatientTabs patient={safe} visits={safeVisits} files={safeFiles} />
+                    <PatientTabs
+                        patient={safe}
+                        visits={safeVisits}
+                        files={safeFiles}
+                        rctaBaseUrl={rctaBaseUrl}
+                    />
                 </div>
             </main>
         );

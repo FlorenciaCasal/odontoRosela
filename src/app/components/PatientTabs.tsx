@@ -15,6 +15,17 @@ type PatientSafe = {
     insuranceNumber?: string | null; phone?: string | null; email?: string | null; notes?: string | null; createdAt?: string | null;
 };
 
+function buildPatientClipboardText(patient: PatientSafe) {
+    return [
+        `Paciente: ${patient.fullName}`,
+        patient.docNumber ? `DNI: ${patient.docNumber}` : null,
+        patient.insuranceName ? `Obra social: ${patient.insuranceName}` : null,
+        patient.insuranceNumber ? `Credencial: ${patient.insuranceNumber}` : null,
+    ]
+        .filter(Boolean)
+        .join("\n");
+}
+
 // function fmt(d?: string | null) {
 //     if (!d) return "";
 //     try { return new Date(d).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" }); }
@@ -45,10 +56,24 @@ const TABS = [
 ] as const satisfies ReadonlyArray<{ key: Tab; label: string }>;
 
 export default function PatientTabs({
-    patient, visits, files,
-}: { patient: PatientSafe; visits: Visit[]; files: FileRow[] }) {
+    patient, visits, files, rctaBaseUrl,
+}: { patient: PatientSafe; visits: Visit[]; files: FileRow[]; rctaBaseUrl?: string | null }) {
     const [tab, setTab] = useState<"datos" | "consultas" | "archivos">("datos");
     const [isEditing, setIsEditing] = useState(false);
+    const [copyFeedback, setCopyFeedback] = useState("");
+    const hasRctaLink = Boolean(rctaBaseUrl);
+
+    async function copyPatientData() {
+        const text = buildPatientClipboardText(patient);
+
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopyFeedback("Datos copiados");
+            window.setTimeout(() => setCopyFeedback(""), 1800);
+        } catch {
+            window.prompt("Copiá los datos:", text);
+        }
+    }
 
     return (
         <div className="space-y-4">
@@ -95,6 +120,33 @@ export default function PatientTabs({
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h3 className="text-sm font-semibold text-slate-900 mb-3">Acciones</h3>
                         <div className="flex flex-wrap gap-2 items-center">
+                            {hasRctaLink ? (
+                                <a
+                                    href={rctaBaseUrl ?? "#"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn-primary"
+                                >
+                                    Abrir RCTA
+                                </a>
+                            ) : (
+                                <button
+                                    type="button"
+                                    disabled
+                                    className="btn cursor-not-allowed opacity-60"
+                                    title="Configurá RCTA_BASE_URL para habilitar esta acción"
+                                >
+                                    RCTA no configurado
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={copyPatientData}
+                                className="btn"
+                            >
+                                Copiar datos
+                            </button>
 
                             <EditPatientInline
                                 p={{
@@ -114,6 +166,12 @@ export default function PatientTabs({
                                 <DeletePatientButton id={patient.id} name={patient.fullName} redirectTo="/patients" />
                             )}
                         </div>
+                        <p className="mt-3 text-xs text-slate-500">
+                            {hasRctaLink
+                                ? "RCTA se abre en una pestaña nueva."
+                                : "Definí RCTA_BASE_URL para habilitar el acceso directo a RCTA."}
+                            {copyFeedback ? ` ${copyFeedback}.` : ""}
+                        </p>
                     </div>
                 </section>
             )}
