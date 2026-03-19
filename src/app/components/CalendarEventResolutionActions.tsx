@@ -14,7 +14,7 @@ export default function CalendarEventResolutionActions({ eventId }: Props) {
   async function ignoreEvent() {
     setPending("ignore");
     try {
-      const res = await fetch(`/api/calendar/events/${eventId}/resolve`, {
+      const res = await fetch(`/api/calendar/events/${encodeURIComponent(eventId)}/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resolution: "ignore" }),

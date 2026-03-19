@@ -1,6 +1,7 @@
 import "server-only";
 import { timingSafeEqual } from "crypto";
 import { NextRequest } from "next/server";
+import { normalizeGoogleEventId } from "@/lib/calendar-events";
 
 function getBearerToken(req: NextRequest) {
   const auth = req.headers.get("authorization");
@@ -39,7 +40,7 @@ export function requireIntegrationToken(req: NextRequest) {
 
   return true;
 }
-
 export function getCalendarEventCleanLink(req: NextRequest, eventId: string) {
-  return new URL(`/calendar/event/${encodeURIComponent(eventId)}`, req.url).toString();
+  const normalizedEventId = normalizeGoogleEventId(eventId);
+  return new URL(`/calendar/event/${encodeURIComponent(normalizedEventId)}`, req.url).toString();
 }

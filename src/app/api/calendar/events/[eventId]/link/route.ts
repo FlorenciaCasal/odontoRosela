@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCalendarEventLinkByEventId } from "@/lib/calendar-events";
+import { getCalendarEventLinkByEventId, normalizeGoogleEventId } from "@/lib/calendar-events";
 import { getCalendarEventCleanLink, requireIntegrationToken } from "@/lib/integrations";
 
 export const runtime = "nodejs";
@@ -15,7 +15,8 @@ export async function GET(
     );
   }
 
-  const { eventId } = await params;
+  const { eventId: rawEventId } = await params;
+  const eventId = normalizeGoogleEventId(rawEventId);
   const link = await getCalendarEventLinkByEventId(eventId);
   const cleanLink = getCalendarEventCleanLink(req, eventId);
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentAuthenticatedUser } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
-import { unlinkCalendarEvent } from "@/lib/calendar-events";
+import { normalizeGoogleEventId, unlinkCalendarEvent } from "@/lib/calendar-events";
 
 export const runtime = "nodejs";
 
@@ -14,7 +14,8 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const { eventId } = await params;
+  const { eventId: rawEventId } = await params;
+  const eventId = normalizeGoogleEventId(rawEventId);
   const link = await unlinkCalendarEvent(eventId, auth.user.id);
 
   if (!link) {

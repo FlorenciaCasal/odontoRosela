@@ -5,7 +5,7 @@ import { getCurrentAuthenticatedUser } from "@/lib/auth/session";
 import { db } from "@/lib/drizzle";
 import { patients } from "@/lib/schema";
 import { logAudit } from "@/lib/audit";
-import { upsertCalendarEventResolution } from "@/lib/calendar-events";
+import { normalizeGoogleEventId, upsertCalendarEventResolution } from "@/lib/calendar-events";
 
 export const runtime = "nodejs";
 
@@ -29,7 +29,8 @@ export async function POST(
   }
 
   try {
-    const { eventId } = await params;
+    const { eventId: rawEventId } = await params;
+    const eventId = normalizeGoogleEventId(rawEventId);
     const body = ResolveSchema.parse(await req.json());
 
     if (body.resolution === "link_existing") {

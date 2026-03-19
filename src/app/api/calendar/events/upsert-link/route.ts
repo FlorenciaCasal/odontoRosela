@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { logAudit } from "@/lib/audit";
-import { upsertCalendarEventFromIntegration } from "@/lib/calendar-events";
+import { normalizeGoogleEventId, upsertCalendarEventFromIntegration } from "@/lib/calendar-events";
 import { getCalendarEventCleanLink, requireIntegrationToken } from "@/lib/integrations";
 
 export const runtime = "nodejs";
@@ -29,9 +29,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = UpsertLinkSchema.parse(await req.json());
+    const eventId = normalizeGoogleEventId(body.googleEventId);
 
     const link = await upsertCalendarEventFromIntegration({
-      eventId: body.googleEventId,
+      eventId,
       calendarId: body.googleCalendarId,
       eventTitleSnapshot: body.eventTitleSnapshot ?? null,
       eventStartAt: body.eventStartAt ? new Date(body.eventStartAt) : null,
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     await logAudit({
       action: "calendar_event_upserted_by_integration",
       entityType: "calendar_event",
-      entityId: body.googleEventId,
+      entityId: eventId,
       patientId: link.patientId ?? null,
       calendarEventLinkId: link.id,
       metadata: {
@@ -60,10 +61,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         ok: true,
-        eventId: body.googleEventId,
+        eventId,
         status: link.status,
         patientId: link.status === "linked" ? link.patientId : null,
-        cleanLink: getCalendarEventCleanLink(req, body.googleEventId),
+        cleanLink: getCalendarEventCleanLink(req, eventId),
         manualReviewRequired: link.manualReviewRequired,
         lastSyncedAt: link.lastSyncedAt?.toISOString() ?? null,
       },

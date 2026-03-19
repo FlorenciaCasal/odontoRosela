@@ -13,7 +13,7 @@ export default function LinkCalendarEventPatientButton({ eventId, patientId }: P
   async function handleLink() {
     setPending(true);
     try {
-      const res = await fetch(`/api/calendar/events/${eventId}/resolve`, {
+      const res = await fetch(`/api/calendar/events/${encodeURIComponent(eventId)}/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

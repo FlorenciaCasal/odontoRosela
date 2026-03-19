@@ -6,7 +6,12 @@ import CalendarEventResolutionActions from "@/app/components/CalendarEventResolu
 import LinkCalendarEventPatientButton from "@/app/components/LinkCalendarEventPatientButton";
 import { getCurrentAuthenticatedUser } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
-import { getCalendarEventLinkByEventId, searchPatientsForResolution } from "@/lib/calendar-events";
+import {
+  getCalendarEventLinkByEventId,
+  getStrongCalendarEventPatientSuggestion,
+  normalizeGoogleEventId,
+  searchPatientsForResolution,
+} from "@/lib/calendar-events";
 
 function formatDate(value?: Date | null) {
   if (!value) return "Sin fecha registrada";
@@ -38,9 +43,14 @@ export default async function CalendarEventPage({
     redirect("/login");
   }
 
-  const { eventId } = await params;
+  const { eventId: rawEventId } = await params;
   const { q = "" } = await searchParams;
+  const eventId = normalizeGoogleEventId(rawEventId);
   const link = await getCalendarEventLinkByEventId(eventId);
+  const suggestedMatch =
+    !link?.patientId && link?.eventTitleSnapshot
+      ? await getStrongCalendarEventPatientSuggestion(link.eventTitleSnapshot)
+      : null;
 
   await logAudit({
     actorUserId: auth.user.id,
@@ -103,6 +113,28 @@ export default async function CalendarEventPage({
                 Buscá por nombre o DNI y vinculá manualmente el evento al paciente correcto.
               </p>
             </div>
+            {suggestedMatch ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="text-sm font-semibold text-emerald-900">
+                  Sugerencia fuerte disponible
+                </div>
+                <div className="mt-1 text-sm text-emerald-950">
+                  Vincular con {suggestedMatch.patient.fullName}
+                  {suggestedMatch.patient.docNumber ? ` (DNI ${suggestedMatch.patient.docNumber})` : ""}
+                </div>
+                <div className="mt-1 text-xs text-emerald-800">
+                  {suggestedMatch.reason === "dni_exact"
+                    ? "Coincidencia exacta por DNI detectado en el titulo del evento."
+                    : "Coincidencia unica fuerte por el titulo del evento."}
+                </div>
+                <div className="mt-3">
+                  <LinkCalendarEventPatientButton
+                    eventId={eventId}
+                    patientId={suggestedMatch.patient.id}
+                  />
+                </div>
+              </div>
+            ) : null}
             <CalendarEventSearchBox />
           </div>
 
